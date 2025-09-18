@@ -1,5 +1,6 @@
 <template>
-    <div class="flex flex-wrap items-center justify-between gap-2 mt-6">
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-6"
+        v-if="pagination && paginationButtons.length > 1">
         <!-- Previous Button -->
         <button @click="goToPage(currentPage - 1)" :disabled="!pagination.prev_page_url"
             class="text-sm px-3 py-1.5 border rounded-full cursor-pointer text-[#121212] hover:bg-gray-100 disabled:opacity-50">

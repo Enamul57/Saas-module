@@ -19,12 +19,12 @@ class DatabaseSeeder extends Seeder
             RolesTableSeeder::class,
             ModulesSeeder::class,
         ]);
-        // $user = User::factory()->create([
-        //     'name' => 'Admin',
-        //     'email' => 'admin@gmail.com',
-        //     'password' => Hash::make('admin@gmail.com'),
-        // ]);
+        $user = User::factory()->create([
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('admin@gmail.com'),
+        ]);
 
-        // $user->assignRole('admin');
+        $user->assignRole('admin');
     }
 }

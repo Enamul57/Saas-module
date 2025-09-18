@@ -2,74 +2,135 @@
 
     <Head title="User Management" />
     <AuthenticatedLayout>
-        <div class="p-6 space-y-6">
-            <h2 class="text-2xl font-semibold text-gray-700">User Management</h2>
+        <div class="p-4 space-y-2">
+            <!-- Create roles form -->
+            <div class="bg-white shadow rounded p-4">
+                <h3 class="text-sm font-medium mb-4">{{ isEditable ? 'Update' : 'Create' }} Roles</h3>
+                <form @submit.prevent="createRole" class="flex gap-4">
+                    <div class="w-full">
+                        <label class="block text-sm text-gray-600">Name</label>
+                        <input v-model="role.name" type="text"
+                            class="mt-1  w-full rounded shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
+                        <span v-if="role.errors.name" class="text-red-500 text-sm">{{ role.errors.name }}</span>
+                    </div>
 
-            <!-- Create user form -->
-            <div class="bg-white shadow rounded p-6">
-                <h3 class="text-lg font-medium mb-4">Add New User</h3>
-                <form @submit.prevent="createUser" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-gray-600">Name</label>
-                        <input v-model="form.name" type="text"
-                            class="mt-1  w-3/4 rounded shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
-                        <span v-if="form.errors.name" class="text-red-500 text-sm">{{ form.errors.name }}</span>
-                    </div>
-                    <div>
-                        <label class="block text-gray-600">Email</label>
-                        <input v-model="form.email" type="email"
-                            class="mt-1 w-3/4  rounded shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
-                        <span v-if="form.errors.email" class="text-red-500 text-sm">{{ form.errors.email }}</span>
-                    </div>
-                    <div>
-                        <label class="block text-gray-600">Password</label>
-                        <input v-model="form.password" type="password"
-                            class="mt-1 w-3/4  rounded shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
-                        <span v-if="form.errors.password" class="text-red-500 text-sm">{{ form.errors.password }}</span>
-                    </div>
-                    <div class="md:col-span-3 mt-4 gap-4 flex">
-                        <button type="button" @click="cancelEdit" class="cancelButton px-6 py-2 rounded-lg"
-                            v-show="isEditable">Cancel</button>
-                        <button type="submit" class="primaryColor px-4 py-2 rounded-lg">
-                            {{ isEditable ? 'Update User' : 'Create User' }}
+                    <div class="flex items-end justify-end gap-2" style="align-items:end">
+                        <button type="button" @click="cancelEdit" class="cancelButton buttonSize px-4 py-2 rounded-lg"
+                            v-show="isEditable">
+                            Cancel
+                        </button>
+                        <button type="submit" class="primaryColor buttonSize px-4 py-2 rounded-md text-sm shadow">
+                            {{ isEditable ? 'Update' : 'Create' }}
                         </button>
                     </div>
                 </form>
             </div>
+            <!-- Assign Modules -->
+            <div class="bg-white shadow rounded p-4 mt-4">
+                <h3 class="text-sm font-medium mb-4">Assign Modules to Role</h3>
 
-            <!-- Users table -->
-            <div class="bg-white shadow rounded p-6">
-                <h3 class="text-lg font-medium mb-4">Users List</h3>
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="user in users.data" :key="user.id">
-                            <td class="px-6 py-2 whitespace-nowrap !text-slate-600">{{ user.name }}</td>
-                            <td class="px-6 py-2 whitespace-nowrap !text-slate-600">{{ user.email }}</td>
-                            <td class="px-6 py-2 whitespace-nowrap !text-slate-600 space-x-2">
-                                <button @click="editUser(user)" class="text-blue-500 hover:underline">Edit</button>
-                                <button @click="deleteUser(user.id)"
-                                    class="text-red-500 hover:underline">Delete</button>
-                            </td>
-                        </tr>
-                        <tr v-if="users.data.length === 0">
-                            <td colspan="3" class="px-6 py-2 text-center text-gray-400">No users found.</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="flex flex-col gap-4">
+                    <!-- Select Role -->
+                    <div class="relative w-full">
+                        <button @click="open = !open" class="w-full px-2 py-2 borderInput rounded shadow-sm text-left">
+                            {{ selectedRoleName || "Select a role" }}
+                        </button>
+                        <ul v-show="open"
+                            class="absolute w-full bg-white shadow rounded mt-1 z-10 max-h-48 overflow-y-auto">
+                            <li v-for="role in roles" :key="role.id" @click="selectRole(role)"
+                                class="cursor-pointer px-2 py-1 primary">
+                                {{ role.name }}
+                            </li>
+                        </ul>
+                    </div>
 
-                <!-- Pagination -->
-                <Pagination :pagination="users" :current-page="currentPage" :per-page="perPage" @page-change="fetchPage"
-                    @per-page-change="onPerPageChange" />
+                    <!-- Select Modules -->
+                    <div class="flex-1" v-if="modules.length > 0">
+                        <label class="block text-sm text-gray-600 mb-1 font-bold">Modules</label>
+                        <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                            <label v-for="module in modules" :key="module.id"
+                                class="flex items-center cursor-pointer bg-gray-50 hover:bg-amber-100 rounded-lg px-3 py-2 shadow-sm transition-colors duration-200">
+                                <input type="checkbox" :value="module.id" v-model="selectedModules"
+                                    class="accent-amber-500 w-4 h-4 rounded border-gray-300" />
+                                <span class="ml-2 text-sm text-gray-800 font-medium">{{ module.name }}</span>
+                            </label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Save button -->
+                <div class="flex justify-end mt-4">
+                    <button @click="assignModules"
+                        class="primaryColor px-4 py-2 rounded-md text-sm shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        Save Assignment
+                    </button>
+                </div>
+            </div>
+            <!-- Assign Users -->
+            <div class="bg-white shadow rounded p-4 mt-4">
+                <h3 class="text-sm font-medium mb-4">Assign Users to Role</h3>
+
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- Select Role -->
+                    <div class="relative w-full">
+                        <button @click="openUserRole = !openUserRole"
+                            class="w-full px-2 py-2 borderInput rounded shadow-sm text-left">
+                            {{ selectedRoleNameUser || "Select a role" }}
+                        </button>
+                        <ul v-show="openUserRole"
+                            class="absolute w-full bg-white shadow rounded mt-1 z-10 max-h-48 overflow-y-auto">
+                            <li v-for="role in roles" :key="role.id" @click="selectRoleUser(role)"
+                                class="cursor-pointer px-2 py-1 primary">
+                                {{ role.name }}
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Select users -->
+                    <div class="relative w-full">
+                        <button @click="openUser = !openUser"
+                            class="w-full px-2 py-2 borderInput rounded shadow-sm text-left">
+                            {{ selectedUserName || "Select a user" }}
+                        </button>
+                        <ul v-show="openUser"
+                            class="absolute w-full bg-white shadow rounded mt-1 z-10 max-h-48 overflow-y-auto">
+                            <li v-for="user in users" :key="user.id" @click="selectUser(user)"
+                                class="cursor-pointer px-2 py-1 primary">
+                                {{ user.name }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Save button -->
+                <div class="flex justify-end mt-4">
+                    <button @click="assignRoleUser"
+                        class="primaryColor px-4 py-2 rounded-md text-sm shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        Assign User
+                    </button>
+                </div>
+            </div>
+            <!--table of roles-->
+            <!-- roles table -->
+            <div class="bg-white shadow rounded p-4">
+                <h3 class="text-base font-medium mb-3">Roles List</h3>
+                <TableComponent :tableHeader="tableHeader" :tableData="roles">
+                    <template #tableAction="{ row }">
+                        <button @click="editRole(row)" class="text-blue-500 hover:underline text-sm font-semibold">
+                            Edit
+                        </button>
+                        <button @click="deleteRole(row.id)" class="text-red-500 hover:underline text-sm font-semibold">
+                            Delete
+                        </button>
+                        <button class="text-green-500 hover:underline text-sm font-semibold">
+                            Set Permissions
+                        </button>
+                    </template>
+                </TableComponent>
+
+                <!-- Popup Modal -->
+                <Popup v-model:showPopup="showPopup" :popupMessage="popupMessage" />
             </div>
         </div>
     </AuthenticatedLayout>
@@ -79,71 +140,154 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from "@/Components/Pagination.vue";
 import { ref, computed, watch } from 'vue';
-import { useForm, Head, router } from '@inertiajs/vue3';
-
+import { useForm, Head, router, Link } from '@inertiajs/vue3';
+import { Inertia } from '@inertiajs/inertia';
+import TableComponent from '@/Components/TableComponent.vue';
+import Popup from '@/Components/Popup.vue';
+//props 
 const props = defineProps({
-    users: { type: Object, required: true }
+    roles: { type: Object, required: true },
+    modules: { type: Object, required: true, default: () => [] },
+    users: { type: Object, required: true, default: () => [] },
 });
 
-const users = computed(() => props.users);
-const currentPage = ref(props.users.current_page || 1);
-const perPage = ref(parseInt(new URL(window.location.href).searchParams.get('per_page') || '10'));
+//variable
+const roles = computed(() => props.roles);
 const isEditable = ref(false);
 const editId = ref<number | null>(null);
+const selectedRole = ref(null)
+const selectedRoleName = ref('')
+const open = ref(false)
+const selectedUser = ref(null)
+const selectedUserName = ref('')
+const openUser = ref(false)
+const selectedRoleUser = ref(null)
+const selectedRoleNameUser = ref('')
+const openUserRole = ref(false)
+const selectedModules = ref([]);
+const showPopup = ref(false);
+const popupMessage = ref("");
+const modules = computed(() => props.modules);
+const users = computed(() => props.users);
+const tableHeader = [
+    { name: 'name' },
+    { name: 'actions' }
+]
+// Form state
+const role = useForm({
+    name: '',
+});
+const assignModulesToRole = useForm({
+    modules: [],
+    role_id: null,
+});
+const assignRoleToUser = useForm({
+    user_id: null,
+    role_id: null,
+})
+//methods
+const createRole = () => {
 
-const form = useForm({ name: '', email: '', password: '' });
-
-// ------------------- CRUD -------------------
-const refreshUsers = () => {
-    router.get(route('users.index'), { page: currentPage.value, per_page: perPage.value }, { only: ['users'], preserveState: true, preserveScroll: true });
-};
-const createUser = () => {
     if (!isEditable.value) {
-        form.post(route('users.store'), { onSuccess: refreshUsers });
+        role.post(route('roles.store'), {
+            onSuccess: () => {
+                role.reset('name');
+            }
+        });
     } else {
-        form.put(route('users.update', { id: editId.value }), {
+        role.put(route('roles.update', { id: editId.value }), {
             preserveState: true,
             onSuccess: () => {
-                form.reset();
                 cancelEdit();
-                refreshUsers();
             }
         });
     }
 };
-
-const editUser = (user: any) => {
-    form.name = user.name;
-    form.email = user.email;
-    form.password = '';
-    isEditable.value = true;
-    editId.value = user.id;
-};
-
 const cancelEdit = () => {
-    form.reset();
+    role.reset();
     isEditable.value = false;
     editId.value = null;
 };
+const editRole = (roleData: any) => {
+    role.name = roleData.name;
+    isEditable.value = true;
+    editId.value = roleData.id;
+}
+const deleteRole = (roleId: number) => {
+    role.delete(route('roles.destroy', { role: roleId }));
+}
 
-const deleteUser = (id: number) => {
-    form.delete(route('users.destroy', id), {
-        onSuccess: () => refreshUsers()
+function selectRole(role) {
+    selectedRole.value = role.id
+    selectedRoleName.value = role.name
+    open.value = !open.value;
+}
+const selectUser = (user) => {
+    selectedUser.value = user.id
+    selectedUserName.value = user.name
+    openUser.value = !openUser.value;
+}
+function selectRoleUser(user) {
+    selectedRoleUser.value = user.id
+    selectedRoleNameUser.value = user.name
+    openUserRole.value = !openUserRole.value;
+}
+const assignModules = () => {
+    if (!selectedRole.value) {
+        popupMessage.value = "Please select a role first.";
+        showPopup.value = true;
+        return;
+    }
+    if (selectedModules.value.length === 0) {
+        popupMessage.value = "Please select at least one module.";
+        showPopup.value = true;
+        return;
+    }
+    //assigned to form and submit
+    assignModulesToRole.modules = selectedModules.value;
+    assignModulesToRole.role_id = selectedRole.value;
+    assignModulesToRole.post(route('roles.modules.assign', { role: selectedRole.value }), {
+        onSuccess: () => {
+            selectedModules.value = [];
+            selectedRole.value = null;
+            selectedRoleName.value = '';
+        },
+        onError: (errors) => {
+            if (errors.role_id) {
+                popupMessage.value = errors.role_id;
+                showPopup.value = true;
+            }
+        }
     });
-};
+}
 
-// ------------------- Pagination -------------------
-const fetchPage = (page: number) => {
-    currentPage.value = page;
-    router.get(route('users.index'), { page, per_page: perPage.value }, { only: ['users'], preserveScroll: true });
-};
+const assignRoleUser = () => {
+    if (!selectedRoleUser.value) {
+        popupMessage.value = "Please select a role first.";
+        showPopup.value = true;
+        return;
+    }
+    if (!selectedUser.value) {
+        popupMessage.value = "Please select a user first.";
+        showPopup.value = true;
+        return;
+    }
+    assignRoleToUser.user_id = selectedUser.value;
+    assignRoleToUser.role_id = selectedRoleUser.value;
 
-const onPerPageChange = (newPerPage: number) => {
-    perPage.value = newPerPage;
-    currentPage.value = 1;
-    router.get(route('users.index'), { page: 1, per_page: perPage.value }, { only: ['users'], preserveScroll: true });
-};
-
-// Keep currentPage reactive on prop change
-watch(() => props.users.current_page, val => currentPage.value = val);
+    assignRoleToUser.post(route('roles.users.assign'), {
+        onSuccess: () => {
+            selectedUser.value = null;
+            selectedUserName.value = '';
+            selectedRoleUser.value = null;
+            selectedRoleNameUser.value = '';
+        },
+        onError: (errors) => {
+            if (errors.user_id) {
+                popupMessage.value = errors.user_id;
+                showPopup.value = true;
+            }
+        }
+    });
+}
 </script>

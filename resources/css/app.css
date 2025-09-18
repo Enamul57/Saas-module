@@ -26,6 +26,9 @@ body{
 .primaryColor{
   @apply bg-gradient-to-r from-amber-500 to-amber-300 text-white  hover:from-amber-300 hover:to-orange-600  
 }
+.primary{
+ @apply bg-gradient-to-r from-amber-500 to-amber-300 text-white border border-white rounded-2xl hover:bg-gradient-to-r hover:font-bold hover:from-amber-400 hover:to-amber-200 hover:text-slate-700
+}
 .header{
   @apply bg-gradient-to-r from-amber-500 to-amber-300 text-white
 }
@@ -47,6 +50,12 @@ body{
 }
 
 .borderInput{
-  @apply border border-orange-400 rounded-lg 
+  @apply border border-orange-400 rounded-3xl 
 
+}
+.buttonSize{
+  @apply h-[50px];
+}
+.popup{
+  @apply bg-[#fbc631e8] shadow-xl;
 }

@@ -8,22 +8,31 @@ import Notification from '@/Components/Notification.vue';
 const $slots = useSlots();
 const $page = usePage();
 const checkPage = usePage();
-
-onMounted(() => {
-    // Any setup code can go here
-    // console.log($page.props);
-    // console.log($slots);
-
-});
 const sidebarOpen = ref(true);
 const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
 };
-// Submenu state
-const userManagementOpen = ref(false);
+const userManagementManual = ref(false);
+
+// Array of routes under user management
+const userManagementRoutes = [
+    route('users.index'),
+    route('roles.index'),
+    route('permissions.assign'),
+];
+
+const userManagementOpen = computed(() => {
+    return userManagementManual.value || userManagementRoutes.some(r => isActive(r));
+});
+
 const toggleUserManagement = () => {
-    userManagementOpen.value = !userManagementOpen.value;
+    userManagementManual.value = !userManagementManual.value;
 };
+
+// Active route helper
+const currentRoute = computed(() => window.location.pathname);
+const isActive = (routeUrl) => currentRoute.value === routeUrl;
+
 const flashMessage = computed(() => {
     const flash = $page.props.flash;
     if (!flash) return null;
@@ -35,6 +44,7 @@ const flashMessage = computed(() => {
 
     return null;
 });
+
 </script>
 
 <template>
@@ -54,44 +64,44 @@ const flashMessage = computed(() => {
 
             <!-- Sidebar Menu -->
             <nav class="mt-4 flex flex-col gap-2 px-2 ">
-                <Link href="#" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
+                <Link href="#" class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
                 <span>
                     <i class='w-6 flex-shrink-0 bx bx-grid-alt text-xl'></i> </span>
                 <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
                 </Link>
+                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                    <span><i class='w-6 flex-shrink-0 bx bx-user mt-2'></i></span>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
+                        <!-- User Management with dropdown -->
+                        <div>
+                            <button @click="toggleUserManagement"
+                                class="flex items-center gap-2 p-2 w-full rounded transition-colors focus:outline-none"
+                                :class="userManagementOpen ? 'bg-orange-100 text-orange-600' : ''">
+                                <span v-show="sidebarOpen">User Management</span>
+                                <svg v-show="sidebarOpen" :class="{ 'rotate-90': userManagementOpen }"
+                                    class="ml-auto h-4 w-4 transition-transform" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
 
-
-                <span v-show="sidebarOpen" class="whitespace-nowrap ">
-                    <!-- User Management with dropdown -->
-                    <div>
-                        <button @click="toggleUserManagement"
-                            class="flex items-center gap-2 p-2 w-full rounded transition-colors focus:outline-none sideBarMenuColor">
-                            <i class='w-6 flex-shrink-0 bx bx-user text-xl'></i>
-                            <span v-show="sidebarOpen" class="whitespace-nowrap">User Management</span>
-                            <svg v-show="sidebarOpen" :class="{ 'rotate-90': userManagementOpen }"
-                                class="ml-auto h-4 w-4 transition-transform" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-
-                        <!-- Submenu -->
-                        <div v-show="userManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
-                            <Link :href="route('users.index')"
-                                class="flex items-center gap-2 p-2 rounded transition-colors text-sm sideBarMenuColor">
-                            Create Users
-                            </Link>
-                            <Link :href="route('users.index')"
-                                class="flex items-center gap-2 p-2 rounded transition-colors text-sm sideBarMenuColor">
-                            Create Roles
-                            </Link>
-                            <Link :href="route('permissions.create')"
-                                class="flex items-center gap-2 p-2 rounded transition-colors text-sm sideBarMenuColor">
-                            Create Permissions
-                            </Link>
+                            <div v-show="userManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
+                                <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
+                                    isActive(route('users.index')) ? 'bg-orange-100 text-orange-600' : '']">
+                                Create Users
+                                </Link>
+                                <Link :href="route('roles.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
+                                    isActive(route('roles.index')) ? 'bg-orange-100 text-orange-600' : '']">
+                                Create Roles
+                                </Link>
+                                <Link :href="route('permissions.assign')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
+                                    isActive(route('permissions.assign')) ? 'bg-orange-100 text-orange-600' : '']">
+                                Create Permissions
+                                </Link>
+                            </div>
                         </div>
-                    </div>
+                    </span>
                 </span>
                 <Link href="#" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
                 <span><i class='w-6 flex-shrink-0 bx  bx-equalizer'></i> </span>

@@ -6,95 +6,108 @@
             <h2 class="text-2xl font-semibold text-gray-700">Permission Management</h2>
 
             <!-- Select Module -->
-            <div class="bg-white shadow rounded p-6 flex items-center gap-4">
-                <label class="block text-gray-600 font-medium">Select Module</label>
-                <select v-model="selectedModule" @change="fetchPermissions"
-                    class="rounded shadow-sm border border-orange-500 px-2 py-2 focus:ring-orange-500 focus:border-orange-500">
-                    <option v-for="module in modules" :key="module" :value="module">{{ module }}</option>
-                </select>
-            </div>
+            <div class="relative w-full">
+                <button @click="open = !open" class="w-full px-2 py-2 borderInput rounded shadow-sm text-left">
+                    {{ selectedModuleName || "Select a module" }}
+                </button>
+                <ul v-if="open"
+                    class="absolute w-full bg-white shadow rounded mt-1 z-10 max-h-48 overflow-y-auto flex flex-col space-y-1 ">
+                    <li v-for="module in modules" :key="module.id" @click="selectModule(module.id)"
+                        class="cursor-pointer px-2 py-1 primary ">
+                        {{ module.name }}
+                    </li>
+                </ul>
+                <!-- Select Modules -->
+                <div class="flex-1 mt-5">
+                    <label class="block text-sm text-gray-600 mb-1 font-bold">Permission</label>
+                    <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                        <label v-for="permission in permissions" :key="permission.name"
+                            class="flex items-center cursor-pointer bg-gray-50 hover:bg-amber-100 rounded-lg px-3 py-2 shadow-sm transition-colors duration-200">
+                            <input type="checkbox" :value="permission.name" v-model="selectedPermissions"
+                                class="accent-amber-500 w-4 h-4 rounded border-gray-300" />
+                            <span class="ml-2 text-sm text-gray-800 font-medium">{{ permission.name }}</span>
+                        </label>
+                    </div>
 
-            <!-- Permissions Table -->
-            <div v-if="permissions.length" class="bg-white shadow rounded p-6">
-                <h3 class="text-lg font-medium mb-4">Assign Permissions</h3>
-
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Permission</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Assign</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="permission in permissions" :key="permission.id">
-                            <td class="px-6 py-2 whitespace-nowrap !text-slate-600">{{ permission.name }}</td>
-                            <td class="px-6 py-2 whitespace-nowrap !text-slate-600">
-                                <input type="checkbox" v-model="assignedPermissions" :value="permission.id"
-                                    class="h-5 w-5 text-orange-500">
-                            </td>
-                        </tr>
-                        <tr v-if="permissions.length === 0">
-                            <td colspan="2" class="px-6 py-2 text-center text-gray-400">No permissions found for this
-                                module.</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="mt-4 flex gap-4">
-                    <button @click="savePermissions" class="primaryColor px-4 py-2 rounded-lg">Save Permissions</button>
-                    <button @click="resetPermissions" class="cancelButton px-4 py-2 rounded-lg">Cancel</button>
                 </div>
             </div>
+            <!-- Save button -->
+            <div class="flex justify-end mt-4">
+                <button @click="assignModules"
+                    class="primaryColor px-4 py-2 rounded-md text-sm shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    Assign Permissions
+                </button>
+            </div>
         </div>
+        <!-- Popup Modal -->
+        <Popup v-model:showPopup="showPopup" :popupMessage="popupMessage" />
     </AuthenticatedLayout>
 </template>
 
 <script setup lang="ts">
+import Popup from '@/Components/Popup.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref, computed, watch } from 'vue';
 import { useForm, Head, router } from '@inertiajs/vue3';
 
-const modules = ref(['UserManagement', 'Profile', 'Posts', 'Settings']); // Example modules
-const selectedModule = ref(modules.value[0]);
 
-const permissions = ref<any[]>([]);
-const assignedPermissions = ref<number[]>([]);
-
-// Form for saving permissions
-const form = useForm({
-    module: '',
-    permissions: [] as number[],
+// Props
+const props = defineProps({
+    modules: {
+        type: Object,
+        required: true,
+    }
 });
+// const selectedModule = ref(modules.value[0]);
+//variable
+const modules = computed(() => props.modules);
+const selectedModuleName = ref<any>(null);
+const selectedPermissions = ref<string[]>([]);
+const open = ref<boolean>(false);
+const showPopup = ref(false);
+const popupMessage = ref("");
 
-// ------------------- CRUD / API -------------------
-const fetchPermissions = () => {
-    // form.get(route('permissions.index'), { module: selectedModule.value }, {
-    //     only: ['permissions', 'assigned'],
-    //     onSuccess: page => {
-    //         permissions.value = page.props.permissions || [];
-    //         assignedPermissions.value = page.props.assigned || [];
-    //     }
-    // });
+const permissions = ref<any[]>([
+    { name: 'create' },
+    { name: 'view' },
+    { name: 'edit' },
+    { name: 'delete' },
+]);
+// Form for saving permissions
+const assignedPermissions = useForm({
+    modules: [],
+    permissions: [],
+});
+//functions
+const assignModules = () => {
+    if (!selectedModuleName.value) {
+        popupMessage.value = "Please select a module first.";
+        showPopup.value = true;
+        return;
+    }
+    assignedPermissions.modules = selectedModuleName.value;
+    assignedPermissions.permissions = selectedPermissions.value;
+
+    assignedPermissions.post(route('permission.module.store'), {
+        onSuccess: () => {
+            selectedPermissions.value = [];
+            selectedModuleName.value = null;
+        },
+        onError: (errors) => {
+            if (errors.role_id) {
+                popupMessage.value = errors.role_id;
+                showPopup.value = true;
+            }
+        }
+    });
+}
+const selectModule = (moduleId: number) => {
+    const module = modules.value.find(m => m.id === moduleId);
+    if (module) {
+        selectedModuleName.value = module.name;
+        assignedPermissions.modules.push(module.id);
+        open.value = false;
+    }
 };
 
-const savePermissions = () => {
-    // form.post(route('permissions.store'), { module: selectedModule.value, permissions: assignedPermissions.value }, {
-    //     onSuccess: () => {
-    //         alert('Permissions assigned successfully!');
-    //     }
-    // });
-};
-
-const resetPermissions = () => {
-    assignedPermissions.value = [];
-    fetchPermissions();
-};
-
-// Fetch permissions on module change
-watch(selectedModule, () => fetchPermissions());
-
-// Initial fetch
-fetchPermissions();
 </script>
