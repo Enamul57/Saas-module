@@ -64,7 +64,7 @@ const flashMessage = computed(() => {
 
             <!-- Sidebar Menu -->
             <nav class="mt-4 flex flex-col gap-2 px-2 ">
-                <Link href="#" class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                <Link :href="route('central.dashboard')" class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
                 <span>
                     <i class='w-6 flex-shrink-0 bx bx-grid-alt text-xl'></i> </span>
                 <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
@@ -75,7 +75,7 @@ const flashMessage = computed(() => {
                         <!-- User Management with dropdown -->
                         <div>
                             <button @click="toggleUserManagement"
-                                class="flex items-center gap-2 p-2 w-full rounded transition-colors focus:outline-none"
+                                class="flex items-center gap-2 px-0 py-1 w-full rounded transition-colors focus:outline-none"
                                 :class="userManagementOpen ? 'bg-orange-100 text-orange-600' : ''">
                                 <span v-show="sidebarOpen">User Management</span>
                                 <svg v-show="sidebarOpen" :class="{ 'rotate-90': userManagementOpen }"
@@ -89,15 +89,15 @@ const flashMessage = computed(() => {
                             <div v-show="userManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
                                 <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
                                     isActive(route('users.index')) ? 'bg-orange-100 text-orange-600' : '']">
-                                Create Users
+                                Users
                                 </Link>
                                 <Link :href="route('roles.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
                                     isActive(route('roles.index')) ? 'bg-orange-100 text-orange-600' : '']">
-                                Create Roles
+                                Roles
                                 </Link>
                                 <Link :href="route('permissions.assign')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
                                     isActive(route('permissions.assign')) ? 'bg-orange-100 text-orange-600' : '']">
-                                Create Permissions
+                                Permissions
                                 </Link>
                             </div>
                         </div>

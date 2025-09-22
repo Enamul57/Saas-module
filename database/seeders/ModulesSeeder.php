@@ -29,7 +29,10 @@ class ModulesSeeder extends Seeder
             ['name' => 'Settings'],
 
         ];
-
-        Modules::insert($modules);
+        $data = collect($modules)->map(fn($module) => [
+            'name' => $module['name'],
+            'slug' => \Str::slug(strtolower($module['name'])),
+        ])->toArray();
+        Modules::insert($data);
     }
 }

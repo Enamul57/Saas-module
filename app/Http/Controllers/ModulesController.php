@@ -5,8 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Feature as Modules;
+use App\Models\Feature;
+use App\Models\RolePermissionFeature;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 
 class ModulesController extends Controller
 {
@@ -14,8 +19,10 @@ class ModulesController extends Controller
     public function permissonModuleView()
     {
         $modules = Modules::all();
+        $module_permission = Modules::whereHas('permissions')->with(['permissions'])->get();
         return Inertia::render('UserManagement/User/Permission', [
-            'modules' => $modules
+            'modules' => $modules,
+            'module_permission' => $module_permission,
         ]);
     }
 
@@ -23,9 +30,47 @@ class ModulesController extends Controller
     {
         $collection = $request->all();
         $modules = $request->modules;
-        $permissions = $request->permissions;
+        $permissions_collection = collect($request->permissions)->map(fn($permission) => [
+            'name' => $permission,
+            'slug' => Str::slug(strtolower($permission)),
+        ]);
+        $existInDB = DB::table('permissions')->whereIn('slug', $permissions_collection->pluck('slug'))->pluck('slug')->toArray();
+        $newPermissions = $permissions_collection->reject(fn($permission) => in_array($permission['slug'], $existInDB))->values()->toArray();
+        if (!empty($newPermissions)) {
+            DB::table('permissions')->insert($newPermissions);
+        }
+
+        $permissions_id = DB::table('permissions')->whereIn('slug', $permissions_collection->pluck('slug'))->pluck('id');
+        $features = Feature::findOrFail($modules['id']);
+        for ($i = 0; $i < count($permissions_id); $i++) {
+            $features->permissions()->syncWithOutDetaching($permissions_id);
+        }
+        return to_route('permissions.assign')->with('success', 'Assigned Permission successfuly');
         //check if the permission exists
-        dd($permissions);
+
+    }
+
+    public function updatePermissionToModule(Request $request, $oldFeatureId)
+    {
+        DB::table('feature_permission')->where('feature_id', $oldFeatureId)->delete();
+        $collection = $request->all();
+        $modules = $request->modules;
+        $permissions_collection = collect($request->permissions)->map(fn($permission) => [
+            'name' => $permission,
+            'slug' => Str::slug(strtolower($permission)),
+        ]);
+        $existInDB = DB::table('permissions')->whereIn('slug', $permissions_collection->pluck('slug'))->pluck('slug')->toArray();
+        $newPermissions = $permissions_collection->reject(fn($permission) => in_array($permission['slug'], $existInDB))->values()->toArray();
+        if (!empty($newPermissions)) {
+            DB::table('permissions')->insert($newPermissions);
+        }
+
+        $permissions_id = DB::table('permissions')->whereIn('slug', $permissions_collection->pluck('slug'))->pluck('id');
+        $features = Feature::findOrFail($modules['id']);
+        for ($i = 0; $i < count($permissions_id); $i++) {
+            $features->permissions()->syncWithOutDetaching($permissions_id);
+        }
+        return to_route('permissions.assign')->with('info', 'Updated Permission successfuly');
     }
     public function create()
     {
@@ -64,5 +109,32 @@ class ModulesController extends Controller
         }
 
         return to_route('roles.index')->with('error', 'User or Role not found.');
+    }
+    //rele permission
+    public function assignRolePermission(Request $request, $roleId)
+    {
+        $role = Role::findOrFail($roleId);
+
+        $modules = $request->modules;
+        foreach ($modules as $featureId => $permissionIds) {
+            if (count($permissionIds) > 0) {
+                foreach ($permissionIds as $permissionId) {
+                    RolePermissionFeature::updateOrInsert([
+                        'role_id' => $roleId,
+                        'feature_id' => $featureId,
+                        'permission_id' => $permissionId,
+                    ], [
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
+        return to_route('roles.index')->with('success', 'Assigned Permissions to ' . $role->name);
+    }
+
+    public function destroy($id)
+    {
+        DB::table('feature_permission')->where('feature_id', $id)->delete();
+        return to_route('permissions.assign')->with('danger', 'Deleted Permission successfuly');
     }
 }

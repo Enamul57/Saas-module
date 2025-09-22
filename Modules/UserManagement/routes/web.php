@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ModulesController;
 use Illuminate\Support\Facades\Route;
+use Modules\UserManagement\Http\Controllers\PermissionController;
 use Modules\UserManagement\Http\Controllers\UserController;
 use Modules\UserManagement\Http\Controllers\UserManagementController;
 
@@ -25,6 +26,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // roles modules
     Route::get('/permission/modules', [ModulesController::class, 'permissonModuleView'])->name('permissions.assign');
     Route::post('/permission/modules', [ModulesController::class, 'assignPermissionToModule'])->name('permission.module.store');
+    Route::put('/permission/modules/{id}', [ModulesController::class, 'updatePermissionToModule'])->name('permission.module.update');
+    Route::delete('/permission/module/{id}', [ModulesController::class, 'destroy'])->name('permission.module.delete');
     Route::post('/roles/{role}/modules', [ModulesController::class, 'assignModulesToRole'])->name('roles.modules.assign');
     Route::post('/roles/users/assign', [ModulesController::class, 'assignRoleToUser'])->name('roles.users.assign');
+    Route::post('/roles/{role}/permissions', [ModulesController::class, 'assignRolePermission'])->name('role.permission.store');
+    //set permission
+    Route::get('/permission/role/{id}', [PermissionController::class, 'index'])->name('permission.role.index');
 });

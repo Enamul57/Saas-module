@@ -123,9 +123,10 @@
                         <button @click="deleteRole(row.id)" class="text-red-500 hover:underline text-sm font-semibold">
                             Delete
                         </button>
-                        <button class="text-green-500 hover:underline text-sm font-semibold">
-                            Set Permissions
-                        </button>
+                        <Link :href="route('permission.role.index', { id: row.id })"
+                            class="text-green-500 hover:underline text-sm font-semibold">
+                        Set Permissions
+                        </Link>
                     </template>
                 </TableComponent>
 

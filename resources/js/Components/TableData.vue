@@ -27,6 +27,6 @@ const props = defineProps({
     columns: { type: Array, required: true, default: () => [] },
 });
 onMounted(() => {
-    console.log(props.columns);
+    console.log(typeof (props.tableData));
 });
 </script>
