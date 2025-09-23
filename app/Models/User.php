@@ -46,4 +46,13 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+        public function authUserHasModule($slug)
+    {
+        return auth()->user()->roles()->with('features')->get()->pluck('features.*.slug')->flatten()->contains($slug);
+    }
+
+    public function userHasModule($slug)
+    {
+        return $this->roles()->with('features')->get()->pluck('features.*.slug')->flatten()->contains($slug);
+    }
 }
