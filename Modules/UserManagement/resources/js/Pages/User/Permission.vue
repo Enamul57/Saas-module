@@ -87,7 +87,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref, computed, watch } from 'vue';
 import { useForm, Head, router } from '@inertiajs/vue3';
 import TableHeader from '@/Components/TableHeader.vue';
-
+import axios from 'axios';
 
 // Props
 const props = defineProps({
@@ -196,13 +196,26 @@ const assignModules = () => {
         });
     }
 }
-const selectModule = (moduleObj: Object) => {
+const selectModule = async (moduleObj: Object) => {
     open.value = false;
+    selectedModule.value = [];
+    selectedPermissions.value = [];
     const module = modules.value.find(m => m.id === moduleObj.id);
     if (module) {
         selectedModuleName.value = module.name;
         selectedModule.value = module;
         assignedPermissions.modules.push(module);
+    }
+    try {
+        const response = await axios.get(route('permission_module', { id: moduleObj.id }));
+        const permissions = response.data[0].permissions;
+        if (permissions.length > 0) {
+            selectedPermissions.value = permissions.map((p) => p.name);
+            assignedPermissions.permissions = selectedPermissions.value;
+        }
+    }
+    catch (err) {
+        console.error('Error fetching permission modules:', err);
     }
 };
 

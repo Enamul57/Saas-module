@@ -51,7 +51,7 @@ const flashMessage = computed(() => {
     <div class="flex min-h-screen bg-slate-100">
         <!-- Sidebar -->
         <aside :class="[
-            'sideBarColor fixed inset-y-0 left-0 z-20 flex flex-col transition-all duration-300',
+            'sideBarColor fixed inset-y-0 left-0 z-20 flex flex-col transition-all duration-100',
             sidebarOpen ? 'w-64' : 'w-16'
         ]">
             <!-- Hamburger for sidebar -->
@@ -63,12 +63,23 @@ const flashMessage = computed(() => {
             </button>
 
             <!-- Sidebar Menu -->
-            <nav class="mt-4 flex flex-col gap-2 px-2 ">
-                <Link :href="route('central.dashboard')" class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
-                <span>
-                    <i class='w-6 flex-shrink-0 bx bx-grid-alt text-xl'></i> </span>
-                <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
-                </Link>
+            <nav class="mt-4 flex flex-col gap-2 px-2  ">
+                <!-- Dashboard link -->
+                <!--dashboard-->
+                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                    <span> <i class="w-6 flex-shrink-0 bx bx-grid-alt text-xl"></i></span>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
+                        <!--  dropdown -->
+                        <div>
+                            <Link :href="route('central.dashboard')" class="flex items-start gap-2  rounded">
+                            <transition name="fade">
+                                <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
+                            </transition>
+                            </Link>
+                        </div>
+                    </span>
+                </span>
+                <!--user management-->
                 <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
                     <span><i class='w-6 flex-shrink-0 bx bx-user mt-2'></i></span>
                     <span v-show="sidebarOpen" class="whitespace-nowrap ">
@@ -77,7 +88,9 @@ const flashMessage = computed(() => {
                             <button @click="toggleUserManagement"
                                 class="flex items-center gap-2 px-0 py-1 w-full rounded transition-colors focus:outline-none"
                                 :class="userManagementOpen ? 'bg-orange-100 text-orange-600' : ''">
-                                <span v-show="sidebarOpen">User Management</span>
+                                <transition name="fade">
+                                    <span v-if="sidebarOpen">User Management</span>
+                                </transition>
                                 <svg v-show="sidebarOpen" :class="{ 'rotate-90': userManagementOpen }"
                                     class="ml-auto h-4 w-4 transition-transform" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
@@ -85,7 +98,6 @@ const flashMessage = computed(() => {
                                         d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
-
                             <div v-show="userManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
                                 <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
                                     isActive(route('users.index')) ? 'bg-orange-100 text-orange-600' : '']">
@@ -103,10 +115,22 @@ const flashMessage = computed(() => {
                         </div>
                     </span>
                 </span>
-                <Link href="#" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
-                <span><i class='w-6 flex-shrink-0 bx  bx-equalizer'></i> </span>
-                <span v-show="sidebarOpen" class="whitespace-nowrap">Settings</span>
-                </Link>
+                <!--settings-->
+                <!--dashboard-->
+                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                    <span><i class='w-6 flex-shrink-0 bx  bx-equalizer'></i> </span>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
+                        <!--  dropdown -->
+                        <div>
+                            <Link :href="route('central.dashboard')" class="flex items-start gap-2  rounded">
+                            <transition name="fade">
+                                <span v-show="sidebarOpen" class="whitespace-nowrap">Settings</span>
+                            </transition>
+                            </Link>
+                        </div>
+                    </span>
+                </span>
+                <!--end-->
             </nav>
         </aside>
 
@@ -170,3 +194,61 @@ const flashMessage = computed(() => {
         </div>
     </div>
 </template>
+<style>
+.fade-enter-active {
+    transition: opacity 0.1s ease, transform 1s ease;
+}
+
+.fade-leave-active {
+    transition: opacity 1s ease, transform 1s ease;
+}
+
+.fade-enter-from {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.fade-enter-to {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.fade-leave-from {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.fade-leave-to {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+/* Same for slide-fade if you use it */
+.slide-fade-enter-active {
+    transition: all 0.1s ease;
+}
+
+.slide-fade-leave-active {
+    transition: all 1s ease;
+}
+
+.slide-fade-enter-from {
+    opacity: 0;
+    transform: translateY(-5px);
+}
+
+.slide-fade-enter-to {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.slide-fade-leave-from {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.slide-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-5px);
+}
+</style>

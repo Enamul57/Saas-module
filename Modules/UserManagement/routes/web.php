@@ -28,9 +28,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/permission/modules', [ModulesController::class, 'assignPermissionToModule'])->name('permission.module.store');
     Route::put('/permission/modules/{id}', [ModulesController::class, 'updatePermissionToModule'])->name('permission.module.update');
     Route::delete('/permission/module/{id}', [ModulesController::class, 'destroy'])->name('permission.module.delete');
+    Route::get('/permission/module/{id}', [ModulesController::class, 'permission_module'])->name('permission_module');
+
     Route::post('/roles/{role}/modules', [ModulesController::class, 'assignModulesToRole'])->name('roles.modules.assign');
     Route::post('/roles/users/assign', [ModulesController::class, 'assignRoleToUser'])->name('roles.users.assign');
     Route::post('/roles/{role}/permissions', [ModulesController::class, 'assignRolePermission'])->name('role.permission.store');
+    Route::get('role/{id}/module', [ModulesController::class, 'role_module'])->name('role_module');
     //set permission
     Route::get('/permission/role/{id}', [PermissionController::class, 'index'])->name('permission.role.index');
 });

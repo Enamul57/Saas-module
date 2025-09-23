@@ -132,6 +132,16 @@ class ModulesController extends Controller
         return to_route('roles.index')->with('success', 'Assigned Permissions to ' . $role->name);
     }
 
+    public function role_module($role)
+    {
+        $role_module = Role::where('id', $role)->with(['features'])->get();
+        return response()->json($role_module);
+    }
+    public function permission_module($moduleId)
+    {
+        $modulePermission = Modules::where('id', $moduleId)->with('permissions')->get();
+        return response()->json($modulePermission);
+    }
     public function destroy($id)
     {
         DB::table('feature_permission')->where('feature_id', $id)->delete();
