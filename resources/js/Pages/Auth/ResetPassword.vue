@@ -25,7 +25,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('central.password.store'), {
+    form.post(route('password.store'), {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };
@@ -41,7 +41,7 @@ const submit = () => {
                 <InputLabel for="email" value="Email" />
 
                 <TextInput id="email" type="email" class="mt-1 block w-full" v-model="form.email" required autofocus
-                    autocomplete="username" />
+                    autocomplete="email" />
 
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>

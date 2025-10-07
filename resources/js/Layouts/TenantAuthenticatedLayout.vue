@@ -1,30 +1,54 @@
 <script setup>
-import { ref, onMounted, useSlots } from 'vue';
+import { ref, onMounted, useSlots, watch, computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import Notification from '@/Components/Notification.vue';
+import { useTenant } from '@/composables/useTenant';
 
+const { tenantRoute, currentTenant } = useTenant();
 const $slots = useSlots();
 const $page = usePage();
-onMounted(() => {
-    // Any setup code can go here
-    // console.log($page.props);
-    // console.log($slots);
-});
+const checkPage = usePage();
 const sidebarOpen = ref(true);
 const toggleSidebar = () => {
-    let toggleMenu = document.querySelector('.toggleNav');
-    if (toggleMenu) {
-        toggleMenu.classList.toggle('ml-[12%]');
-        toggleMenu.classList.toggle('ml-[10%]');
-    }
-
     sidebarOpen.value = !sidebarOpen.value;
 };
-</script>
+const userManagementManual = ref(false);
 
+// Array of routes under user management
+const userManagementRoutes = [
+    route('tenant.users.index'),
+    route('tenant.roles.index'),
+    route('tenant.permissions.assign'),
+];
+
+const userManagementOpen = computed(() => {
+    return userManagementManual.value || userManagementRoutes.some(r => isActive(r));
+});
+
+const toggleUserManagement = () => {
+    userManagementManual.value = !userManagementManual.value;
+};
+
+// Active route helper
+const currentRoute = computed(() => window.location.pathname);
+const isActive = (routeUrl) => currentRoute.value === routeUrl;
+
+const flashMessage = computed(() => {
+    const flash = $page.props.flash;
+    if (!flash) return null;
+
+    if (flash.success) return { type: 'success', message: flash.success };
+    if (flash.danger) return { type: 'danger', message: flash.danger };
+    if (flash.warning) return { type: 'warning', message: flash.warning };
+    if (flash.info) return { type: 'info', message: flash.info };
+
+    return null;
+});
+
+</script>
 <template>
     <div class="flex min-h-screen bg-slate-100">
         <!-- Sidebar -->
@@ -41,20 +65,74 @@ const toggleSidebar = () => {
             </button>
 
             <!-- Sidebar Menu -->
-            <nav class="mt-4 flex flex-col gap-2 px-2 ">
-                <Link href="#" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
-                <span>
-                    <i class='w-6 flex-shrink-0 bx bx-grid-alt text-xl'></i> </span>
-                <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
-                </Link>
-                <Link href="#" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
-                <span><i class='w-6 flex-shrink-0 bx  bx-user'></i> </span>
-                <span v-show="sidebarOpen" class="whitespace-nowrap">User Management</span>
-                </Link>
-                <Link href="#" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
-                <span><i class='w-6 flex-shrink-0 bx  bx-equalizer'></i> </span>
-                <span v-show="sidebarOpen" class="whitespace-nowrap">Settings</span>
-                </Link>
+            <nav class="mt-4 flex flex-col gap-2 px-2  ">
+                <!-- Dashboard link -->
+                <!--dashboard-->
+                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                    <span> <i class="w-6 flex-shrink-0 bx bx-grid-alt text-xl"></i></span>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
+                        <!--  dropdown -->
+                        <div>
+                            <Link :href="route('central.dashboard')" class="flex items-start gap-2  rounded">
+                            <transition name="fade">
+                                <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
+                            </transition>
+                            </Link>
+                        </div>
+                    </span>
+                </span>
+                <!--user management-->
+                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                    <span><i class='w-6 flex-shrink-0 bx bx-user mt-2'></i></span>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
+                        <!-- User Management with dropdown -->
+                        <div>
+                            <button @click="toggleUserManagement"
+                                class="flex items-center gap-2 px-0 py-1 w-full rounded transition-colors focus:outline-none"
+                                :class="userManagementOpen ? 'bg-orange-100 text-orange-600' : ''">
+                                <transition name="fade">
+                                    <span v-if="sidebarOpen">User Management</span>
+                                </transition>
+                                <svg v-show="sidebarOpen" :class="{ 'rotate-90': userManagementOpen }"
+                                    class="ml-auto h-4 w-4 transition-transform" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                            <div v-show="userManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
+                                <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
+                                    isActive(route('users.index')) ? 'bg-orange-100 text-orange-600' : '']">
+                                Users
+                                </Link>
+                                <Link :href="route('roles.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
+                                    isActive(route('roles.index')) ? 'bg-orange-100 text-orange-600' : '']">
+                                Roles
+                                </Link>
+                                <Link :href="route('permissions.assign')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
+                                    isActive(route('permissions.assign')) ? 'bg-orange-100 text-orange-600' : '']">
+                                Permissions
+                                </Link>
+                            </div>
+                        </div>
+                    </span>
+                </span>
+                <!--settings-->
+                <!--dashboard-->
+                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                    <span><i class='w-6 flex-shrink-0 bx  bx-equalizer'></i> </span>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
+                        <!--  dropdown -->
+                        <div>
+                            <Link :href="route('central.dashboard')" class="flex items-start gap-2  rounded">
+                            <transition name="fade">
+                                <span v-show="sidebarOpen" class="whitespace-nowrap">Settings</span>
+                            </transition>
+                            </Link>
+                        </div>
+                    </span>
+                </span>
+                <!--end-->
             </nav>
         </aside>
 

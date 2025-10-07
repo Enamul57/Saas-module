@@ -18,7 +18,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('tenant.password.email'));
+    form.post(route('password.email'));
 };
 </script>
 
