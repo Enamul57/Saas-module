@@ -18,6 +18,8 @@ return new class extends Migration
             $table->foreign('feature_id')->references('id')->on('features')->onDelete('cascade')->onUpdate('cascade');
             $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade')->onUpdate('cascade');
             $table->unique(['feature_id', 'permission_id']);
+            $table->unsignedBigInteger('tenant_id')->index()->nullable();
+
             $table->timestamps();
         });
     }

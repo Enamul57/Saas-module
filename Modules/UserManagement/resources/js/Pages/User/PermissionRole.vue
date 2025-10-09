@@ -7,7 +7,7 @@
 
             <!-- Modules & Permissions -->
             <div class="space-y-6">
-                <div v-for="module in roles[0].features" :key="module.id" class="p-4 border rounded shadow">
+                <div v-for="module in roles[0]?.features" :key="module.id" class="p-4 border rounded shadow">
                     <h3 class="font-bold text-gray-700 mb-2">{{ module.name }}</h3>
 
                     <div v-if="module.permissions && module.permissions.length > 0" class="flex flex-wrap gap-2">
@@ -52,7 +52,7 @@ const props = defineProps({
     role_name: { type: String, required: true },
     role_id: { type: Number, required: true }
 });
-console.log(props.roles[0].features);
+console.log(props.roles[0]?.features);
 const featuresPermission = ref([]);
 // Track selected permissions per module
 const assignedPermissions = useForm({
@@ -61,7 +61,7 @@ const assignedPermissions = useForm({
 
 // Initialize module arrays
 onMounted(() => {
-    props.roles[0].features.forEach((module) => {
+    props.roles[0]?.features.forEach((module) => {
         if (!assignedPermissions.modules[module.id]) {
             assignedPermissions.modules[module.id] = [];
         }

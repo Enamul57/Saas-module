@@ -13,7 +13,7 @@ const props = defineProps({
 const form = useForm({});
 
 const submit = () => {
-    form.post(route('tenant.verification.send'));
+    form.post(route('verification.send'));
 };
 
 const verificationLinkSent = computed(
@@ -43,7 +43,7 @@ const verificationLinkSent = computed(
                     Resend Verification Email
                 </PrimaryButton>
 
-                <Link :href="route('tenant.logout')" method="post" as="button"
+                <Link :href="route('logout')" method="post" as="button"
                     class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                 Log Out</Link>
             </div>

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class TenantController extends Controller
@@ -37,15 +40,22 @@ class TenantController extends Controller
             'email'        => 'required|email|unique:tenants,email',
             'password'     => 'required|string|min:8|confirmed',
         ]);
+        $parts = explode('.', config('app.domain'));
+        $domain = count($parts) > 2 ? $request->domain . "." . implode('.', array_slice($parts, 1)) : $request->domain . "."  . implode('.', $parts);
 
-        $company = Tenant::create([
+        $company = Company::create([
             'company_name' => $validated['company_name'],
             'email'        => $validated['email'],
             'password'     => $validated['password'],
-        ]);
+            'domain' => $domain,
 
-        $company->domains()->create([
-            'domain' => $request->domain . "." . config('app.domain'),
+        ]);
+        Log::info('company id' . $company->id);
+        User::create([
+            'name' => $validated['company_name'],
+            'email'        => $validated['email'],
+            'password'     => $validated['password'],
+            'tenant_id' => $company->id,
         ]);
         return redirect()->route('central.dashboard')
             ->with('status', 'Company created successfully!');

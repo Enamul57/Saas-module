@@ -43,7 +43,7 @@ class UserController extends Controller
             'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
-
+        $data['tenant_id'] = session('tenant_id');
         // Create user in DB
         User::create($data);
         return to_route('users.index')->with('success', 'User Created Successfully');

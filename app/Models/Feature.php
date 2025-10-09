@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scope\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Models\Role;

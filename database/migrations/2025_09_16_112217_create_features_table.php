@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('slug')->unique();
+            $table->unsignedBigInteger('tenant_id')->index();
             $table->timestamps();
         });
     }

@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
+use App\Models\Tenant;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -19,10 +21,12 @@ class DatabaseSeeder extends Seeder
             RolesTableSeeder::class,
             ModulesSeeder::class,
         ]);
+        $company = Company::firstOrFail();
         $user = User::factory()->create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('admin@gmail.com'),
+            'tenant_id' => $company->id,
         ]);
 
         $user->assignRole('admin');

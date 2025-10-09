@@ -32,10 +32,13 @@ class ModulesController extends Controller
         $modules = $request->modules;
         $permissions_collection = collect($request->permissions)->map(fn($permission) => [
             'name' => $permission,
-            'slug' => Str::slug(strtolower($permission)),
+            'slug' => Str::slug(strtolower($permission)) . "-" . $request->modules['slug'],
         ]);
+
         $existInDB = DB::table('permissions')->whereIn('slug', $permissions_collection->pluck('slug'))->pluck('slug')->toArray();
+
         $newPermissions = $permissions_collection->reject(fn($permission) => in_array($permission['slug'], $existInDB))->values()->toArray();
+        //dd($newPermissions);
         if (!empty($newPermissions)) {
             DB::table('permissions')->insert($newPermissions);
         }
@@ -57,8 +60,9 @@ class ModulesController extends Controller
         $modules = $request->modules;
         $permissions_collection = collect($request->permissions)->map(fn($permission) => [
             'name' => $permission,
-            'slug' => Str::slug(strtolower($permission)),
+            'slug' => Str::slug(strtolower($permission)) . "-" . $request->modules['slug'],
         ]);
+
         $existInDB = DB::table('permissions')->whereIn('slug', $permissions_collection->pluck('slug'))->pluck('slug')->toArray();
         $newPermissions = $permissions_collection->reject(fn($permission) => in_array($permission['slug'], $existInDB))->values()->toArray();
         if (!empty($newPermissions)) {
@@ -102,9 +106,9 @@ class ModulesController extends Controller
 
         $user = User::findOrFail($validated['user_id']);
         $role = Role::findById($validated['role_id']);
-
         if ($user && $role) {
-            $user->syncRoles([$role->name]);
+            $user->assignRole($role->name);
+            $user->update(['role' => $role->name]);
             return to_route('roles.index')->with('info', 'Role assigned to user successfully.');
         }
 
@@ -116,22 +120,29 @@ class ModulesController extends Controller
         $role = Role::findOrFail($roleId);
 
         $modules = $request->modules;
-        foreach ($modules as $featureId => $permissionIds) {
+
+        foreach ($modules as $permissionIds) {
             if (count($permissionIds) > 0) {
                 foreach ($permissionIds as $permissionId) {
-                    RolePermissionFeature::updateOrInsert([
-                        'role_id' => $roleId,
-                        'feature_id' => $featureId,
-                        'permission_id' => $permissionId,
-                    ], [
-                        'updated_at' => now(),
-                    ]);
+                    $permission = Permission::findOrFail($permissionId);
+                    $role->givePermissionTo($permission);
                 }
             }
         }
+
         return to_route('roles.index')->with('success', 'Assigned Permissions to ' . $role->name);
     }
 
+    public function role_module($role)
+    {
+        $role_module = Role::where('id', $role)->with(['features'])->get();
+        return response()->json($role_module);
+    }
+    public function permission_module($moduleId)
+    {
+        $modulePermission = Modules::where('id', $moduleId)->with('permissions')->get();
+        return response()->json($modulePermission);
+    }
     public function destroy($id)
     {
         DB::table('feature_permission')->where('feature_id', $id)->delete();

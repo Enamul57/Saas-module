@@ -38,7 +38,7 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
-        return Redirect::route('tenant.profile.edit');
+        return Redirect::route('profile.edit');
     }
 
     /**
@@ -59,6 +59,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return to_route('tenant.welcome');
+        return to_route('welcome');
     }
 }

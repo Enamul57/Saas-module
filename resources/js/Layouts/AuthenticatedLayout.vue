@@ -140,10 +140,10 @@ const flashMessage = computed(() => {
                                 </template>
 
                                 <template #content>
-                                    <DropdownLink :href="route('tenant.profile.edit')">
+                                    <DropdownLink :href="route('profile.edit')">
                                         Profile
                                     </DropdownLink>
-                                    <DropdownLink :href="route('tenant.logout')" method="post" as="button">
+                                    <DropdownLink :href="route('logout')" method="post" as="button">
                                         Log Out
                                     </DropdownLink>
                                 </template>
