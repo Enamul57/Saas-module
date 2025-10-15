@@ -103,7 +103,7 @@ const flashMessage = computed(() => {
                         </div>
                     </span>
                 </span>
-                <Link href="#" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
+                <Link :href="route('settings.index')" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
                 <span><i class='w-6 flex-shrink-0 bx  bx-equalizer'></i> </span>
                 <span v-show="sidebarOpen" class="whitespace-nowrap">Settings</span>
                 </Link>

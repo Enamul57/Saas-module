@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
-import laravel from 'laravel-vite-plugin';
-import path from 'path';
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import laravel from "laravel-vite-plugin";
+import path from "path";
 export default defineConfig({
     plugins: [
         laravel({
-            input: 'resources/js/app.js',
+            input: "resources/js/app.js",
             refresh: true,
         }),
         vue({
@@ -18,16 +18,20 @@ export default defineConfig({
         }),
     ],
     server: {
-        host: '127.0.0.1',
+        host: "127.0.0.1",
         port: 5173,
         hmr: {
-            host: '127.0.0.1',
+            host: "127.0.0.1",
         },
     },
-     resolve: {
+    resolve: {
         alias: {
-            '@': path.resolve(__dirname, 'resources/js'),
-            '@UserManagement': path.resolve(__dirname, 'Modules/UserManagement/resources/js'),
+            "@": path.resolve(__dirname, "resources/js"),
+            "@UserManagement": path.resolve(
+                __dirname,
+                "Modules/UserManagement/resources/js"
+            ),
+            "@Setting": path.resolve(__dirname, "Modules/Setting/resources/js"),
         },
     },
 });

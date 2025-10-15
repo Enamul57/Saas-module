@@ -13,9 +13,20 @@ return new class extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
+            // Key for the setting (unique)
             $table->string('key')->unique();
+
+            // Value (text to store anything, can store JSON as string)
             $table->text('value')->nullable();
-            $table->string('type')->default('text');
+
+            // Type of the value (string, boolean, number, json)
+            $table->string('type')->default('string');
+
+            // Group/category of the setting (organization, leave, payroll, etc.)
+            $table->string('group')->nullable();
+            $table->unsignedBigInteger('tenant_id')->nullable()->index();
+            $table->unique(['key', 'tenant_id']);
+            // Optional description for admin clarity
             $table->string('description')->nullable();
             $table->timestamps();
         });

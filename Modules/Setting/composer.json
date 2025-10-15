@@ -1,5 +1,5 @@
 {
-    "name": "nwidart/usermanagement",
+    "name": "nwidart/setting",
     "description": "",
     "authors": [
         {
@@ -17,9 +17,6 @@
     },
     "autoload": {
         "psr-4": {
-            "Modules\\UserManagement\\": "app/",
-            "Modules\\UserManagement\\Database\\Factories\\": "database/factories/",
-            "Modules\\UserManagement\\Database\\Seeders\\": "database/seeders/",
             "Modules\\Setting\\": "app/",
             "Modules\\Setting\\Database\\Factories\\": "database/factories/",
             "Modules\\Setting\\Database\\Seeders\\": "database/seeders/"
@@ -27,7 +24,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Modules\\UserManagement\\Tests\\": "tests/"
+            "Modules\\Setting\\Tests\\": "tests/"
         }
     }
 }

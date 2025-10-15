@@ -1,4 +1,5 @@
 {
     "UserManagement": true,
-    "Profile": true
+    "Profile": true,
+    "Setting": true
 }
