@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tenant_id')->index()->nullable();
             $table->foreign('feature_id')->references('id')->on('features')->onDelete('cascade')->onUpdate('cascade');
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade')->onUpdate('cascade');
-            $table->unique(['feature_id', 'role_id']);
+            $table->unique(['feature_id', 'role_id', 'tenant_id']);
             $table->timestamps();
         });
     }

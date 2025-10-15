@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\Company;
 use App\Models\Tenant;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
+use App\Models\TenantRole as Role;
 use Illuminate\Support\Str;
 
 class RolesTableSeeder extends Seeder

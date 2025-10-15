@@ -45,6 +45,14 @@ class User extends Authenticatable
         ];
     }
 
+    public function setRoleAttribute($value)
+    {
+        $this->attributes['role'] = strtolower($value);
+    }
+    public function getRoleAttribute($value)
+    {
+        $this->attributes['role'] = ucfirst($value);
+    }
     public static function booted()
     {
         static::addGlobalScope(new TenantScope);

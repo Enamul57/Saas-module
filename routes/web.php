@@ -37,6 +37,7 @@ Route::middleware(['web', IdentifyTenant::class]) // ensure session/auth/web mid
         })->middleware(['auth', 'verified'])->name('central.dashboard');
 
         Route::get('/tests', function () {
+            dd(app('tenant')->toArray());
             $domain = config('app.domain');
             $parts = explode('.', $domain);
             $split = count($parts) > 2 ? 'ok.' . implode('.', array_slice($parts, 1)) : 'ok.' . implode('.', $parts);
@@ -62,18 +63,11 @@ Route::middleware(['web', IdentifyTenant::class]) // ensure session/auth/web mid
             });
             //test permission
             Route::get('/permission', function () {
-                // $roleNames = auth()->user()->getRoleNames();
-                // $roleIds = Role::whereIn('name', $roleNames)->pluck('id');
-                // $moduleRole = Role::whereIn('id', $roleIds)->with('features')->get();
-                // $getModuleNames = $moduleRole->pluck('features.*.slug')->flatten();
-                // $hasModule = $getModuleNames->contains('user-management');
-                // $hasModule = auth()->user()->roles()->with('features')->get()->pluck('features.*.slug')->flatten()->contains('user-management');
-                // dd($hasModule);
-                //user permisison
+                dd(auth()->user()->roles()->with(['permissions'])->get()->toArray());
                 $userPermissions = auth()->user()->roles()
-                    ->with(['features.permissions'])
+                    ->with(['permissions'])
                     ->get()
-                    ->pluck('features.*.permissions.*.name') // or id
+                    ->pluck('permissions.*.slug') // or id
                     ->flatten()
                     ->unique();
                 dd($userPermissions->toArray());

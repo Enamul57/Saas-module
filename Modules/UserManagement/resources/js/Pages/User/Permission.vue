@@ -70,7 +70,7 @@
                     </td>
                 </tr>
                 <tr v-if="module_permission.length === 0">
-                    <td class="px-3 py-2 text-center text-gray-400 text-sm">
+                    <td class="px-3 py-2 text-center text-gray-400 text-sm" :colspan="tableHeader.length">
                         No data found.
                     </td>
                 </tr>
@@ -84,11 +84,14 @@
 <script setup lang="ts">
 import Popup from '@/Components/Popup.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useForm, Head, router } from '@inertiajs/vue3';
 import TableHeader from '@/Components/TableHeader.vue';
+import axios from 'axios';
+import { Notyf } from 'notyf';
+import 'notyf/notyf.min.css';
 
-
+const notyf = new Notyf();
 // Props
 const props = defineProps({
     modules: {
@@ -100,9 +103,12 @@ const props = defineProps({
         required: true,
     }
 });
-// const selectedModuleName = ref(modules.value[0]);
+//hooks
+onMounted(() => {
+    fetchModulePermission();
+});
+
 //variable
-const modules = computed(() => props.modules);
 const selectedModuleName = ref<any>(null);
 const selectedModule = ref<any>(null);
 const selectedPermissions = ref<string[]>([]);
@@ -111,6 +117,9 @@ const showPopup = ref(false);
 const popupMessage = ref("");
 const isEditable = ref<boolean>(false);
 const oldModuleId = ref(null);
+const modules = ref<any[]>([]);
+const module_permission = ref<any[]>([]);
+
 const tableHeader = [
     {
         name: "module",
@@ -122,16 +131,6 @@ const tableHeader = [
         name: "actions",
     }
 ]
-const module_permission = computed(() => {
-    return props.module_permission.map((mp) => {
-        let permissions = mp.permissions;
-        let p = permissions.map((p) => p.name).join(', ');
-        return {
-            module: mp,
-            permissions: p,
-        }
-    });
-})
 
 const permissions = ref<any[]>([
     { name: 'Create' },
@@ -145,69 +144,73 @@ const assignedPermissions = useForm({
     permissions: [],
 });
 //functions
+const fetchModulePermission = async () => {
+    try {
+        const response = await axios.get(route('permissions.module.fetch'));
+        modules.value = response.data.modules;
+        module_permission.value = response.data.module_permission.map((mp) => {
+            let permissions = mp.permissions;
+            let p = permissions.map((p) => p.name).join(', ');
+            return {
+                module: mp,
+                permissions: p,
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching module permissions:", error);
+    }
+};
 const cancelEdit = () => {
     assignedPermissions.modules = [];
     assignedPermissions.permissions = [];
+    selectedPermissions.value = [];
+    selectedModuleName.value = null;
     isEditable.value = false;
     oldModuleId.value = null;
-    selectedPermissions.value = null;
-    selectedModuleName.value = null;
 };
-const assignModules = () => {
+const assignModules = async () => {
     if (!selectedModuleName.value) {
         popupMessage.value = "Please select a module first.";
         showPopup.value = true;
         return;
     }
     if (selectedPermissions.value.length === 0) {
-        popupMessage.value = "Please select a permssion first.";
+        popupMessage.value = "Please select a permission first.";
         showPopup.value = true;
         return;
     }
+
     assignedPermissions.modules = selectedModule.value;
     assignedPermissions.permissions = selectedPermissions.value;
-    if (!isEditable.value) {
 
-        assignedPermissions.post(route('permission.module.store'), {
-            onSuccess: () => {
-                selectedPermissions.value = [];
-                selectedModuleName.value = null;
-            },
-            onError: (errors) => {
-                if (errors.role_id) {
-                    popupMessage.value = errors.role_id;
-                    showPopup.value = true;
-                }
-            }
-        });
+    const onSuccess = async () => {
+        selectedPermissions.value = [];
+        selectedModuleName.value = null;
+        await fetchModulePermission(); // ✅ make sure data is up-to-date
+        cancelEdit(); // reset state cleanly
+    };
+
+    if (!isEditable.value) {
+        await assignedPermissions.post(route('permission.module.store'), { onSuccess });
+        notyf.success('Submitted successfully!');
     } else {
-        assignedPermissions.put(route('permission.module.update', { id: oldModuleId.value }), {
-            onSuccess: () => {
-                selectedPermissions.value = [];
-                selectedModuleName.value = null;
-                cancelEdit();
-            },
-            onError: (errors) => {
-                if (errors.role_id) {
-                    popupMessage.value = errors.role_id;
-                    showPopup.value = true;
-                }
-            }
-        });
+        await assignedPermissions.put(route('permission.module.update', { id: oldModuleId.value }), { onSuccess });
+        notyf.success('Updated successfully!');
     }
-}
+};
+
 const selectModule = (moduleObj: Object) => {
     open.value = false;
     const module = modules.value.find(m => m.id === moduleObj.id);
     if (module) {
         selectedModuleName.value = module.name;
         selectedModule.value = module;
-        assignedPermissions.modules.push(module);
+        assignedPermissions.modules = [module];
     }
 };
 
 const editModulePermission = (data: any) => {
-    const matchedModule = props.modules.find((module) => module.id === data.module.id);
+    const matchedModule = modules.value.find((module) => module.id === data.module.id);
     oldModuleId.value = data.module.id;
 
     if (!matchedModule) return;
@@ -229,8 +232,11 @@ const editModulePermission = (data: any) => {
     isEditable.value = true;
 };
 const deletePermission = (moduleId: number) => {
-
     assignedPermissions.delete(route('permission.module.delete', { id: moduleId }));
+    module_permission.value = module_permission.value.filter(mp => mp.module.id !== moduleId);
+    selectedPermissions.value = [];
+    selectedModuleName.value = null;
+    notify.success('Deleted successfully!');
 }
 
 </script>

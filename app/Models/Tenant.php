@@ -40,8 +40,8 @@ class Tenant extends BaseTenant
     {
         static::addGlobalScope(new TenantScope);
         static::creating(function ($model) {
-            if ($tenant_id = session('tenant_id')) {
-                $model->tenant_id = $tenant_id;
+            if ($tenant_id = app('tenant')->id) {
+                $model->tenant_id = app('tenant')->id;
             }
         });
     }

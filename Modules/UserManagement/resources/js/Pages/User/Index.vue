@@ -13,19 +13,19 @@
                         <label class="block text-gray-600">Name</label>
                         <input v-model="form.name" type="text"
                             class="mt-1  w-3/4  shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
-                        <span v-if="form.errors.name" class="text-red-500 text-sm">{{ form.errors.name }}</span>
+                        <p v-if="form.errors.name" class="text-red-500 text-sm">{{ form.errors.name }}</p>
                     </div>
                     <div>
                         <label class="block text-gray-600">Email</label>
                         <input v-model="form.email" type="email"
                             class="mt-1 w-3/4   shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
-                        <span v-if="form.errors.email" class="text-red-500 text-sm">{{ form.errors.email }}</span>
+                        <p v-if="form.errors.email" class="text-red-500 text-sm">{{ form.errors.email }}</p>
                     </div>
                     <div>
                         <label class="block text-gray-600">Password</label>
                         <input v-model="form.password" type="password"
                             class="mt-1 w-3/4   shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
-                        <span v-if="form.errors.password" class="text-red-500 text-sm">{{ form.errors.password }}</span>
+                        <p v-if="form.errors.password" class="text-red-500 text-sm">{{ form.errors.password }}</p>
                     </div>
                     <div class="md:col-span-3 mt-4 gap-4 flex">
                         <button type="button" @click="cancelEdit" class="cancelButton px-6 py-2 rounded-lg"

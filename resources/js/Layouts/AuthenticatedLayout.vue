@@ -163,7 +163,7 @@ const flashMessage = computed(() => {
             </header>
 
             <!-- Page Content -->
-            <Notification v-if="flashMessage" :type="flashMessage.type" :message="flashMessage.message" />
+            <!-- <Notification v-if="flashMessage" :type="flashMessage.type" :message="flashMessage.message" /> -->
             <main class="flex-1 xl:px-[18rem] lg:px-[10rem] py-6 sm:px-[6rem] px-[5rem]">
                 <slot />
             </main>

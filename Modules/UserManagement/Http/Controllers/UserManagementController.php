@@ -8,7 +8,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use PhpParser\Node\Expr\AssignOp\Mod;
-use Spatie\Permission\Models\Role;
+use App\Models\TenantRole as Role;
+use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
 {
@@ -17,7 +18,12 @@ class UserManagementController extends Controller
      */
     public function index()
     {
-        $roles = Role::all();
+        $authUser = auth()->user();
+        if ($authUser->hasRole('Admin')) {
+            $roles = Role::all();
+        } else {
+            $roles = Role::whereIn('id', $authUser->roles->pluck('id'))->get();
+        }
         if ($roles->isEmpty()) {
             return Inertia::render('UserManagement/User/Role');
         }
@@ -44,7 +50,7 @@ class UserManagementController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name',
+            'name' => 'required|string|max:255',
         ]);
 
         Role::firstOrCreate(['name' => strtolower($validated['name'])]);
@@ -74,11 +80,11 @@ class UserManagementController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $id,
+            'name' => ['required', 'string', 'max:255', Rule::unique('roles')->ignore($id)->where(fn($q) => $q->where('tenant_id', session('tenant_id')))],
         ]);
         $role = Role::findById($id);
 
-        $role->update(['name' => $request->name]);
+        $role->update(['name' => $validated['name']]);
 
         return to_route('roles.index')->with('info', 'Role updated successfully.');
     }

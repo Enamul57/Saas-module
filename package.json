@@ -24,6 +24,7 @@
         "@inertiajs/vue3": "^2.1.5",
         "axios": "^1.6.0",
         "boxicons": "^2.1.4",
+        "notyf": "^3.10.0",
         "vue3-easy-data-table": "^1.5.47",
         "vuex": "^4.0.2",
         "ziggy-js": "^2.5.3"

@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/roles/{role}', [UserManagementController::class, 'destroy'])->name('roles.destroy');
     // roles modules
     Route::get('/permission/modules', [ModulesController::class, 'permissonModuleView'])->name('permissions.assign');
+    Route::get('/permission/modules/fetchJson', [ModulesController::class, 'fetchModulePermissionJson'])->name('permissions.module.fetch');
     Route::post('/permission/modules', [ModulesController::class, 'assignPermissionToModule'])->name('permission.module.store');
     Route::put('/permission/modules/{id}', [ModulesController::class, 'updatePermissionToModule'])->name('permission.module.update');
     Route::delete('/permission/module/{id}', [ModulesController::class, 'destroy'])->name('permission.module.delete');

@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('features', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('slug')->unique();
+            $table->string('name');
+            $table->string('slug');
             $table->unsignedBigInteger('tenant_id')->index();
+            $table->unique(['slug', 'tenant_id']);
             $table->timestamps();
         });
     }

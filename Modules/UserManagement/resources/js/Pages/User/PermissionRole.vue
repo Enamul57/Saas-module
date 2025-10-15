@@ -81,6 +81,10 @@ const assignModules = () => {
 
     assignedPermissions.post(route('role.permission.store', { role: props.role_id }), {
         onSuccess: () => {
+            // props.roles[0]?.features.forEach((module: any) => {
+            //     assignedPermissions.modules[module.id] = module.permissions.map((p: any) => p.id);
+            // });
+            // isEditable.value = false;
             cancelEdit();
         }
     });
