@@ -19,6 +19,7 @@
                             <span class="ml-2 text-sm text-gray-800 font-medium">{{ permission.name }}</span>
                         </label>
                     </div>
+
                     <div v-else class="text-gray-400 italic text-sm">
                         No permissions available for this module.
                     </div>
@@ -51,7 +52,7 @@ const props = defineProps({
     role_name: { type: String, required: true },
     role_id: { type: Number, required: true }
 });
-
+console.log(props.roles[0]?.features);
 const featuresPermission = ref([]);
 // Track selected permissions per module
 const assignedPermissions = useForm({
@@ -80,6 +81,10 @@ const assignModules = () => {
 
     assignedPermissions.post(route('role.permission.store', { role: props.role_id }), {
         onSuccess: () => {
+            // props.roles[0]?.features.forEach((module: any) => {
+            //     assignedPermissions.modules[module.id] = module.permissions.map((p: any) => p.id);
+            // });
+            // isEditable.value = false;
             cancelEdit();
         }
     });

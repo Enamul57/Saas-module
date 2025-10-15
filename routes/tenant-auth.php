@@ -19,16 +19,16 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
-        ->name('password.request');
+        ->name('tenant.password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->name('password.email');
+        ->name('tenant.password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
-        ->name('password.reset');
+        ->name('tenant.password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
-        ->name('password.store');
+        ->name('tenant.password.store');
 });
 
 Route::middleware('auth')->group(function () {
@@ -44,11 +44,11 @@ Route::middleware('auth')->group(function () {
         ->name('tenant.verification.send');
 
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])
-        ->name('password.confirm');
+        ->name('tenant.password.confirm');
 
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
-    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+    Route::put('password', [PasswordController::class, 'update'])->name('tenant.password.update');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('tenant.logout');

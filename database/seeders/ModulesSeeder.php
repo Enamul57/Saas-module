@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Feature as Modules;
+use App\Models\Tenant;
 
 class ModulesSeeder extends Seeder
 {
@@ -14,6 +16,7 @@ class ModulesSeeder extends Seeder
     public function run(): void
     {
         //
+        $company = Company::firstOrFail();
         $modules = [
             ['name' => 'User Management'],
             ['name' => 'Role & Permission Management'],
@@ -32,6 +35,7 @@ class ModulesSeeder extends Seeder
         $data = collect($modules)->map(fn($module) => [
             'name' => $module['name'],
             'slug' => \Str::slug(strtolower($module['name'])),
+            'tenant_id' => $company->id,
         ])->toArray();
         Modules::insert($data);
     }

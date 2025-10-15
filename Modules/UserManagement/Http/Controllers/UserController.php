@@ -5,6 +5,7 @@ namespace Modules\UserManagement\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -40,10 +41,10 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email',
+            'email' => ['required', 'email', Rule::unique('users')->where(fn($q) => $q->where('tenant_id', session('tenant_id')))],
             'password' => 'required|string|min:6',
         ]);
-
+        $data['tenant_id'] = session('tenant_id');
         // Create user in DB
         User::create($data);
         return to_route('users.index')->with('success', 'User Created Successfully');
@@ -73,7 +74,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email|unique:users,email,' . $id,
+            'email' => ['required', 'email', Rule::unique('users')->ignore($id)->where(fn($q) => $q->where('tenant_id', session('tenant_id')))],
         ]);
         if ($request->filled('password')) {
             $validated['password'] = $request->password;

@@ -145,8 +145,8 @@ import { useForm, Head, router, Link } from '@inertiajs/vue3';
 import { Inertia } from '@inertiajs/inertia';
 import TableComponent from '@/Components/TableComponent.vue';
 import Popup from '@/Components/Popup.vue';
-import axios from 'axios'
-
+import { Notyf } from 'notyf';
+import 'notyf/notyf.min.css';
 //props 
 const props = defineProps({
     roles: { type: Object, required: true },
@@ -155,6 +155,7 @@ const props = defineProps({
 });
 
 //variable
+const notify = new Notyf();
 const roles = computed(() => props.roles);
 const isEditable = ref(false);
 const editId = ref<number | null>(null);
@@ -197,6 +198,7 @@ const createRole = () => {
                 role.reset('name');
             }
         });
+        notify.success('Role Created successfully!');
     } else {
         role.put(route('roles.update', { id: editId.value }), {
             preserveState: true,
@@ -204,6 +206,8 @@ const createRole = () => {
                 cancelEdit();
             }
         });
+        notify.success('Role Updated successfully!');
+
     }
 };
 const cancelEdit = () => {
@@ -218,20 +222,14 @@ const editRole = (roleData: any) => {
 }
 const deleteRole = (roleId: number) => {
     role.delete(route('roles.destroy', { role: roleId }));
+    notify.success('Role Deleted successfully!');
+
 }
 
-async function selectRole(role) {
+function selectRole(role) {
     selectedRole.value = role.id
     selectedRoleName.value = role.name
     open.value = !open.value;
-
-    try {
-        const response = await axios.get(route('role_module', { id: selectedRole.value }));
-        console.log(response.data);
-        selectedModules.value = response.data[0].features.map((f) => f.id);
-    } catch (error) {
-        console.error('Error fetching role modules:', error)
-    }
 }
 const selectUser = (user) => {
     selectedUser.value = user.id
@@ -242,7 +240,6 @@ function selectRoleUser(user) {
     selectedRoleUser.value = user.id
     selectedRoleNameUser.value = user.name
     openUserRole.value = !openUserRole.value;
-
 }
 const assignModules = () => {
     if (!selectedRole.value) {
@@ -271,6 +268,8 @@ const assignModules = () => {
             }
         }
     });
+    notify.success('Role has assigned to module successfully!');
+
 }
 
 const assignRoleUser = () => {
@@ -301,8 +300,7 @@ const assignRoleUser = () => {
             }
         }
     });
+    notify.success('Role has assigned to user successfully!');
+
 }
-
-//hooks
-
 </script>

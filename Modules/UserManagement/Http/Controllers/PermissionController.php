@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Feature as Modules;
-use Spatie\Permission\Models\Role;
+use App\Models\TenantRole as Role;
 
 class PermissionController extends Controller
 {

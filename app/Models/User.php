@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Models\Scope\TenantScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,11 +20,7 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    protected $guarded = [];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -47,13 +45,16 @@ class User extends Authenticatable
         ];
     }
 
-    public function authUserHasModule($slug)
+    public function setRoleAttribute($value)
     {
-        return auth()->user()->roles()->with('features')->get()->pluck('features.*.slug')->flatten()->contains($slug);
+        $this->attributes['role'] = strtolower($value);
     }
-
-    public function userHasModule($slug)
+    public function getRoleAttribute($value)
     {
-        return $this->roles()->with('features')->get()->pluck('features.*.slug')->flatten()->contains($slug);
+        $this->attributes['role'] = ucfirst($value);
+    }
+    public static function booted()
+    {
+        static::addGlobalScope(new TenantScope);
     }
 }

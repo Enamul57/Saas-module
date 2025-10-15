@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Scope\TenantScope;
 use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Illuminate\Support\Str;
 
-class Tenant extends BaseTenant implements TenantWithDatabase
+class Tenant extends BaseTenant
 {
-    use HasDatabase, HasDomains;
+    use HasDomains;
     protected $guarded = [];
 
     public static function getCustomColumns(): array
@@ -33,5 +34,15 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         $this->attributes['company_name'] = $company_name;
         $this->attributes['slug'] = Str::slug($company_name);
+    }
+
+    public static function booted()
+    {
+        static::addGlobalScope(new TenantScope);
+        static::creating(function ($model) {
+            if ($tenant_id = app('tenant')->id) {
+                $model->tenant_id = app('tenant')->id;
+            }
+        });
     }
 }
