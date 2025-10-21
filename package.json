@@ -22,9 +22,15 @@
     "dependencies": {
         "@inertiajs/inertia": "^0.11.1",
         "@inertiajs/vue3": "^2.1.5",
+        "@radix-ui/react-switch": "^1.2.6",
         "axios": "^1.6.0",
         "boxicons": "^2.1.4",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "lucide-react": "^0.545.0",
         "notyf": "^3.10.0",
+        "tailwind-merge": "^3.3.1",
+        "tailwindcss-animate": "^1.0.7",
         "vue3-easy-data-table": "^1.5.47",
         "vuex": "^4.0.2",
         "ziggy-js": "^2.5.3"

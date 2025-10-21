@@ -13,6 +13,7 @@ const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
 };
 const userManagementManual = ref(false);
+const employeeManagementManual = ref(false);
 
 // Array of routes under user management
 const userManagementRoutes = [
@@ -20,15 +21,21 @@ const userManagementRoutes = [
     route('roles.index'),
     route('permissions.assign'),
 ];
-
+const employeeManagementRoutes = [
+    route('users.index'),
+];
 const userManagementOpen = computed(() => {
     return userManagementManual.value || userManagementRoutes.some(r => isActive(r));
 });
-
+const employeeManagementOpen = computed(() => {
+    return employeeManagementManual.value || employeeManagementRoutes.some(r => isActive(r));
+});
 const toggleUserManagement = () => {
     userManagementManual.value = !userManagementManual.value;
 };
-
+const toggleEmployeeManagement = computed(() => {
+    employeeManagementManual.value = !employeeManagementManual.value;
+});
 // Active route helper
 const currentRoute = computed(() => window.location.pathname);
 const isActive = (routeUrl) => currentRoute.value === routeUrl;
@@ -69,6 +76,7 @@ const flashMessage = computed(() => {
                     <i class='w-6 flex-shrink-0 bx bx-grid-alt text-xl'></i> </span>
                 <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
                 </Link>
+                <!-- User Management -->
                 <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
                     <span><i class='w-6 flex-shrink-0 bx bx-user mt-2'></i></span>
                     <span v-show="sidebarOpen" class="whitespace-nowrap ">
@@ -98,6 +106,32 @@ const flashMessage = computed(() => {
                                 <Link :href="route('permissions.assign')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
                                     isActive(route('permissions.assign')) ? 'bg-orange-100 text-orange-600' : '']">
                                 Permissions
+                                </Link>
+                            </div>
+                        </div>
+                    </span>
+                </span>
+                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
+                    <span><i class='w-6 flex-shrink-0 bx bx-user mt-2'></i></span>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
+                        <!-- User Management with dropdown -->
+                        <div>
+                            <button @click="toggleEmployeeManagement"
+                                class="flex items-center gap-2 px-0 py-1 w-full rounded transition-colors focus:outline-none"
+                                :class="employeeManagementOpen ? 'bg-orange-100 text-orange-600' : ''">
+                                <span v-show="sidebarOpen">Employee Management</span>
+                                <svg v-show="sidebarOpen" :class="{ 'rotate-90': employeeManagementOpen }"
+                                    class="ml-auto h-4 w-4 transition-transform" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+
+                            <div v-show="employeeManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
+                                <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
+                                    isActive(route('users.index')) ? 'bg-orange-100 text-orange-600' : '']">
+                                Index
                                 </Link>
                             </div>
                         </div>
@@ -140,7 +174,7 @@ const flashMessage = computed(() => {
                                 </template>
 
                                 <template #content>
-                                    <DropdownLink :href="route('profile.edit')">
+                                    <DropdownLink href="#">
                                         Profile
                                     </DropdownLink>
                                     <DropdownLink :href="route('logout')" method="post" as="button">

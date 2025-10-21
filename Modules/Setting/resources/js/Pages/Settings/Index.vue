@@ -6,12 +6,26 @@
         <div class="p-6 space-y-6">
             <h2 class="text-2xl font-semibold text-gray-700">Settings</h2>
 
+            <!-- Edit Mode Toggle -->
+            <div class="mb-4">
+                <button :class="[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none',
+                    isOn ? 'primaryColor' : 'bg-gray-300'
+                ]" @click="toggle">
+                    <span :class="[
+                        'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+                        isOn ? 'translate-x-6' : 'translate-x-1'
+                    ]" />
+                </button>
+                <span> Edit</span>
+            </div>
+
             <!-- Tabs -->
             <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8">
+                <nav class="flex space-x-8 mb-2">
                     <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key" :class="tabClass(tab.key)"
-                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none">
-                        {{ tab.label }}
+                        class="whitespace-nowrap py-2 px-3 border-b-2 font-medium text-sm focus:outline-none">
+                        {{ (tab.label).charAt(0).toUpperCase() + (tab.label).slice(1) }}
                     </button>
                 </nav>
             </div>
@@ -24,27 +38,28 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Key
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Value
                             </th>
-                            <th class="px-6 py-3"></th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="setting in filteredSettings" :key="setting.id">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ setting.key }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <input v-model="setting.value" class="border rounded px-2 py-1 w-full" type="text" />
+                        <tr v-for="setting in filteredSettings" :key="setting.id" class="bg-white">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ ucFirst(setting.key) }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button @click="updateSetting(setting)"
-                                    class="text-indigo-600 hover:text-indigo-900 font-semibold">
-                                    Save
-                                </button>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <TextInput v-model="setting.value" :type="'text'" :disabled="!editMode" />
                             </td>
                         </tr>
                     </tbody>
                 </table>
+                <div class="w-full">
+                    <button v-if="editMode" @click="updateSetting"
+                        class="primaryColor px-6 py-2 rounded-lg font-semibold float-right mt-5">
+                        Save
+                    </button>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -52,33 +67,48 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref, computed, watch } from 'vue';
-import { useForm, Head, router } from '@inertiajs/vue3';
+import { ref, computed, onMounted, watch, emit } from 'vue';
 import axios from 'axios';
+import TextInput from '@/Components/Input.vue';
+import { useForm, Head } from '@inertiajs/vue3';
+import { Notyf } from 'notyf';
+import 'notyf/notyf.min.css';
+
+const notyf = new Notyf();
+const props = defineProps({
+    modelValue: { type: Boolean, default: false },
+});
+
+const settings = ref([] as any[]);
+const tabs = ref([]);
+const editMode = ref(false); // toggle edit mode
+const emit = defineEmits(['update:modelValue']);
+const form = useForm({
+    settings: [] as any[],
+});
+const isOn = ref(props.modelValue);
+
+watch(() => props.modelValue, (val) => {
+    isOn.value = val;
+});
+
+const toggle = () => {
+    isOn.value = !isOn.value;
+    editMode.value = !editMode.value;
+}
+// Fetch settings on mount
+onMounted(() => {
+    axios.get(route('setting.json')).then(response => {
+        settings.value = response.data;
+        form.settings = response.data;
+        const uniqueGroups = Array.from(new Set(settings.value.map((s: any) => s.group)));
+        tabs.value = uniqueGroups.map((s: any) => ({ key: s, label: s }));
+        if (tabs.value.length > 0) activeTab.value = tabs.value[0].key;
+    });
+});
 
 // Tabs for grouping settings
-const tabs = [
-    { key: 'organization', label: 'Organization' },
-    { key: 'users', label: 'Users & Access' },
-    { key: 'employee', label: 'Employee Management' },
-    { key: 'attendance', label: 'Attendance & Time' },
-    { key: 'leave', label: 'Leave Management' },
-    { key: 'payroll', label: 'Payroll' },
-    { key: 'performance', label: 'Performance' },
-    { key: 'recruitment', label: 'Recruitment' },
-    { key: 'notifications', label: 'Notifications' },
-    { key: 'system', label: 'System' },
-];
-
 const activeTab = ref('organization');
-
-// Sample settings data (replace with API fetch)
-const settings = ref([
-    { id: 1, key: 'company_name', value: 'Acme Corp', group: 'organization' },
-    { id: 2, key: 'timezone', value: 'UTC+6', group: 'organization' },
-    { id: 3, key: 'default_role', value: 'Employee', group: 'users' },
-    { id: 4, key: 'max_annual_leave', value: '25', group: 'leave' },
-]);
 
 // Filter settings by active tab
 const filteredSettings = computed(() => {
@@ -88,22 +118,27 @@ const filteredSettings = computed(() => {
 // Tab styling
 const tabClass = (tabKey: string) => {
     return activeTab.value === tabKey
-        ? 'border-indigo-500 text-indigo-600'
-        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+        ? 'primaryColor borderInput'
+        : 'border-transparent text-gray-500 hover:bg-[#f59e0b] hover:text-white hover:rounded-3xl';
 };
 
-// Update setting (replace with API call)
-const updateSetting = async (setting: any) => {
+// Update setting API call
+const updateSetting = async () => {
     try {
-        await axios.put(`/api/settings/${setting.id}`, { value: setting.value });
-        alert('Setting updated!');
+        // await axios.put(`/api/settings/`);
+        form.post(route('settings.store'), {
+            onSuccess: () => {
+                notyf.success('Settings Updated Successfully!');
+            }
+        });
     } catch (error) {
         console.error(error);
-        alert('Error updating setting');
+        notyf.error('Error updating setting');
     }
 };
-</script>
 
-<style scoped>
-/* Add optional hover/focus styles if needed */
-</style>
+const ucFirst = (text: string) => {
+    const formattedText = text.replace(/_/g, ' ');
+    return formattedText.charAt(0).toUpperCase() + formattedText.slice(1);
+}
+</script>

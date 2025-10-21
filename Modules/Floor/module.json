@@ -1,0 +1,11 @@
+{
+    "name": "Floor",
+    "alias": "floor",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Floor\\Providers\\FloorServiceProvider"
+    ],
+    "files": []
+}

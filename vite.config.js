@@ -32,6 +32,24 @@ export default defineConfig({
                 "Modules/UserManagement/resources/js"
             ),
             "@Setting": path.resolve(__dirname, "Modules/Setting/resources/js"),
+            "@Performance": path.resolve(
+                __dirname,
+                "Modules/Performance/resources/js"
+            ),
+            "@Profile": path.resolve(__dirname, "Modules/Profile/resources/js"),
+            "@Employee": path.resolve(
+                __dirname,
+                "Modules/Employee/resources/js"
+            ),
+            "@Recruitment": path.resolve(
+                __dirname,
+                "Modules/Recruitment/resources/js"
+            ),
+            "@Time": path.resolve(__dirname, "Modules/Time/resources/js"),
+            "@PIM": path.resolve(__dirname, "Modules/PIM/resources/js"),
+            "@Leave": path.resolve(__dirname, "Modules/Leave/resources/js"),
+            "@Admin": path.resolve(__dirname, "Modules/Admin/resources/js"),
+            "@Floor": path.resolve(__dirname, "Modules/Floor/resources/js"),
         },
     },
 });

@@ -4,7 +4,9 @@ namespace Modules\Setting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Modules\Setting\App\Models\Setting;
 
 class SettingController extends Controller
 {
@@ -27,7 +29,20 @@ class SettingController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {}
+    public function store(Request $request)
+    {
+        $settings = $request->input('settings', []);
+        foreach ($settings as $setting) {
+            Setting::updateOrCreate([
+                'id' => $setting['id']
+            ], [
+                'key' => $setting['key'],
+                'value' => $setting['value'],
+            ]);
+        }
+        Log::info('Settings Update Request: ' . print_r($settings, true));
+        return to_route('settings.index');
+    }
 
     /**
      * Show the specified resource.
@@ -50,6 +65,11 @@ class SettingController extends Controller
      */
     public function update(Request $request, $id) {}
 
+    public function getSettingJson()
+    {
+        $settings = Setting::all();
+        return response()->json($settings);
+    }
     /**
      * Remove the specified resource from storage.
      */

@@ -22,6 +22,19 @@ const modules = {
     Setting: import.meta.glob(
         "../../Modules/Setting/resources/js/Pages/**/*.vue"
     ),
+    Admin: import.meta.glob("../../Modules/Admin/resources/js/Pages/**/*.vue"),
+    PIM: import.meta.glob("../../Modules/PIM/resources/js/Pages/**/*.vue"),
+    Time: import.meta.glob("../../Modules/Time/resources/js/Pages/**/*.vue"),
+    Performance: import.meta.glob(
+        "../../Modules/Performance/resources/js/Pages/**/*.vue"
+    ),
+    Leave: import.meta.glob("../../Modules/Leave/resources/js/Pages/**/*.vue"),
+    Employee: import.meta.glob(
+        "../../Modules/Employee/resources/js/Pages/**/*.vue"
+    ),
+    Recruitment: import.meta.glob(
+        "../../Modules/Recruitment/resources/js/Pages/**/*.vue"
+    ),
     // Add more modules here
 };
 

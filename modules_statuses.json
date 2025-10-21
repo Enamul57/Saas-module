@@ -1,5 +1,13 @@
 {
     "UserManagement": true,
     "Profile": true,
-    "Setting": true
+    "Setting": true,
+    "Employee": true,
+    "PIM": true,
+    "Time": true,
+    "Performance": true,
+    "Leave": true,
+    "Floor": true,
+    "Recruitment": true,
+    "Admin": true
 }
