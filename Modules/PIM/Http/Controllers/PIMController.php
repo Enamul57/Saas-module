@@ -4,15 +4,25 @@ namespace Modules\PIM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
+use Modules\PIM\app\Http\Requests\EmployeeStore;
+use Modules\PIM\app\services\EmployeeCreate;
 
 class PIMController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+    protected $employeeCreate;
+
+    public function __construct(EmployeeCreate $employeeCreate)
+    {
+        $this->employeeCreate = $employeeCreate;
+    }
     public function index()
     {
-        return view('pim::index');
+        return Inertia::render('PIM/PIM/Index');
     }
 
     /**
@@ -26,7 +36,12 @@ class PIMController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {}
+    public function store(EmployeeStore $request)
+    {
+
+        $employee = $this->employeeCreate->createEmployee($request->validated());
+        return to_route('pim.index');
+    }
 
     /**
      * Show the specified resource.

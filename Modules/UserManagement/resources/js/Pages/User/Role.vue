@@ -155,7 +155,14 @@ const props = defineProps({
 });
 
 //variable
-const notify = new Notyf();
+const notify = new Notyf({
+    duration: 3000,
+    position: {
+        x: 'right',
+        y: 'top',
+    },
+    dismissible: true,
+});
 const roles = computed(() => props.roles);
 const isEditable = ref(false);
 const editId = ref<number | null>(null);

@@ -42,7 +42,7 @@ body{
    @apply bg-slate-200 text-gray-600 font-bold 
 }
 .sideBarMenuColor{
-  @apply bg-slate-200 text-gray-600 font-bold hover:bg-gradient-to-r hover:from-amber-300 hover:to-orange-400 hover:text-gray-700
+  @apply bg-slate-200 text-gray-600 font-bold 
 }
 
 .cancelButton{

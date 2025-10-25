@@ -8,6 +8,7 @@ use App\Models\Scope\TenantScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Modules\PIM\Models\Employee;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -52,6 +53,10 @@ class User extends Authenticatable
     public function getRoleAttribute($value)
     {
         $this->attributes['role'] = ucfirst($value);
+    }
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
     }
     public static function booted()
     {

@@ -45,7 +45,17 @@
 import { ref, computed, onMounted } from 'vue';
 import { useForm, Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Notyf } from 'notyf';
+import 'notyf/notyf.min.css';
 
+const notyf = new Notyf({
+    duration: 3000,
+    position: {
+        x: 'right',
+        y: 'top',
+    },
+    dismissible: true,
+});
 // Props
 const props = defineProps({
     roles: { type: Object, required: true },
@@ -77,15 +87,10 @@ const cancelEdit = () => {
 
 // Save assigned permissions
 const assignModules = () => {
-
-
     assignedPermissions.post(route('role.permission.store', { role: props.role_id }), {
         onSuccess: () => {
-            // props.roles[0]?.features.forEach((module: any) => {
-            //     assignedPermissions.modules[module.id] = module.permissions.map((p: any) => p.id);
-            // });
-            // isEditable.value = false;
             cancelEdit();
+            notyf.success("Permissions assigned successfully!");
         }
     });
 };

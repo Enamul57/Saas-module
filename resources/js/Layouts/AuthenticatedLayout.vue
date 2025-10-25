@@ -14,22 +14,33 @@ const toggleSidebar = () => {
 };
 const userManagementManual = ref(false);
 const employeeManagementManual = ref(false);
+const roleManagementManual = ref(false);
 
+
+const toggleRoleManagement = () => {
+    roleManagementManual.value = !roleManagementManual.value;
+};
 // Array of routes under user management
 const userManagementRoutes = [
     route('users.index'),
+];
+const roleManagementRoutes = [
     route('roles.index'),
     route('permissions.assign'),
 ];
 const employeeManagementRoutes = [
-    route('users.index'),
+    route('pim.index'),
 ];
 const userManagementOpen = computed(() => {
     return userManagementManual.value || userManagementRoutes.some(r => isActive(r));
 });
+const roleManagementOpen = computed(() => {
+    return roleManagementManual.value || roleManagementRoutes.some(r => isActive(r));
+});
 const employeeManagementOpen = computed(() => {
     return employeeManagementManual.value || employeeManagementRoutes.some(r => isActive(r));
 });
+
 const toggleUserManagement = () => {
     userManagementManual.value = !userManagementManual.value;
 };
@@ -57,92 +68,107 @@ const flashMessage = computed(() => {
 <template>
     <div class="flex min-h-screen bg-slate-100">
         <!-- Sidebar -->
+        <!-- Sidebar -->
         <aside :class="[
             'sideBarColor fixed inset-y-0 left-0 z-20 flex flex-col transition-all duration-300',
             sidebarOpen ? 'w-64' : 'w-16'
         ]">
-            <!-- Hamburger for sidebar -->
-            <button @click="toggleSidebar" class="p-4 focus:outline-none">
+            <!-- Toggle Button -->
+            <button @click="toggleSidebar" class="p-4 flex items-center justify-start ml-1 focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
+                <span v-show="sidebarOpen" class="whitespace-nowrap ml-4"><img src="/images/logo.png" alt=""
+                        class="w-40"></span>
             </button>
 
             <!-- Sidebar Menu -->
-            <nav class="mt-4 flex flex-col gap-2 px-2 ">
-                <Link :href="route('central.dashboard')" class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
-                <span>
-                    <i class='w-6 flex-shrink-0 bx bx-grid-alt text-xl'></i> </span>
+            <nav class="mt-4 flex flex-col gap-1 px-2">
+                <!-- Dashboard -->
+                <Link :href="route('central.dashboard')"
+                    class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition">
+                <i class="bx bx-grid-alt text-2xl w-6 flex-shrink-0"></i>
                 <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
                 </Link>
+
                 <!-- User Management -->
-                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
-                    <span><i class='w-6 flex-shrink-0 bx bx-user mt-2'></i></span>
-                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
-                        <!-- User Management with dropdown -->
-                        <div>
-                            <button @click="toggleUserManagement"
-                                class="flex items-center gap-2 px-0 py-1 w-full rounded transition-colors focus:outline-none"
-                                :class="userManagementOpen ? 'bg-orange-100 text-orange-600' : ''">
-                                <span v-show="sidebarOpen">User Management</span>
-                                <svg v-show="sidebarOpen" :class="{ 'rotate-90': userManagementOpen }"
-                                    class="ml-auto h-4 w-4 transition-transform" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
+                <div class="flex flex-col">
+                    <button @click="toggleUserManagement"
+                        class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition w-full">
+                        <i class="las la-user text-2xl w-6 flex-shrink-0"></i>
+                        <span v-show="sidebarOpen" class="flex-1 text-left">User Management</span>
+                        <svg v-show="sidebarOpen" :class="{ 'rotate-90': userManagementOpen }"
+                            class="h-4 w-4 transition-transform ml-auto" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
 
-                            <div v-show="userManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
-                                <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
-                                    isActive(route('users.index')) ? 'bg-orange-100 text-orange-600' : '']">
-                                Users
-                                </Link>
-                                <Link :href="route('roles.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
-                                    isActive(route('roles.index')) ? 'bg-orange-100 text-orange-600' : '']">
-                                Roles
-                                </Link>
-                                <Link :href="route('permissions.assign')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
-                                    isActive(route('permissions.assign')) ? 'bg-orange-100 text-orange-600' : '']">
-                                Permissions
-                                </Link>
-                            </div>
-                        </div>
-                    </span>
-                </span>
-                <span class="flex items-start gap-2 p-2 rounded sideBarMenuColor">
-                    <span><i class='w-6 flex-shrink-0 bx bx-user mt-2'></i></span>
-                    <span v-show="sidebarOpen" class="whitespace-nowrap ">
-                        <!-- User Management with dropdown -->
-                        <div>
-                            <button @click="toggleEmployeeManagement"
-                                class="flex items-center gap-2 px-0 py-1 w-full rounded transition-colors focus:outline-none"
-                                :class="employeeManagementOpen ? 'bg-orange-100 text-orange-600' : ''">
-                                <span v-show="sidebarOpen">Employee Management</span>
-                                <svg v-show="sidebarOpen" :class="{ 'rotate-90': employeeManagementOpen }"
-                                    class="ml-auto h-4 w-4 transition-transform" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
+                    <!-- Nested Menu -->
+                    <div v-show="userManagementOpen" class="ml-10 mt-1 flex flex-col gap-1">
+                        <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                            isActive(route('users.index')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
+                        Users
+                        </Link>
+                    </div>
+                </div>
+                <!-- Role Management -->
+                <div class="flex flex-col">
+                    <button @click="toggleRoleManagement"
+                        class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition w-full">
+                        <i class="las la-user-lock text-2xl w-6 flex-shrink-0"></i>
+                        <span v-show="sidebarOpen" class="flex-1 text-left">Role Management</span>
+                        <svg v-show="sidebarOpen" :class="{ 'rotate-90': roleManagementOpen }"
+                            class="h-4 w-4 transition-transform ml-auto" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
 
-                            <div v-show="employeeManagementOpen" class="ml-6 mt-2 flex flex-col gap-1">
-                                <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded text-sm transition-colors sideBarMenuColor',
-                                    isActive(route('users.index')) ? 'bg-orange-100 text-orange-600' : '']">
-                                Index
-                                </Link>
-                            </div>
-                        </div>
-                    </span>
-                </span>
-                <Link :href="route('settings.index')" class="flex items-center gap-2 p-2 rounded sideBarMenuColor">
-                <span><i class='w-6 flex-shrink-0 bx  bx-equalizer'></i> </span>
+                    <!-- Nested Menu -->
+                    <div v-show="roleManagementOpen" class="ml-10 mt-1 flex flex-col gap-1">
+                        <Link :href="route('roles.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                            isActive(route('roles.index')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
+                        Roles
+                        </Link>
+                        <Link :href="route('permissions.assign')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                            isActive(route('permissions.assign')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
+                        Permissions
+                        </Link>
+                    </div>
+                </div>
+                <!-- PIM -->
+                <div class="flex flex-col">
+                    <button @click="toggleEmployeeManagement"
+                        class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition w-full">
+                        <i class="las la-users text-2xl w-6 flex-shrink-0"></i>
+                        <span v-show="sidebarOpen" class="flex-1 text-left">PIM</span>
+                        <svg v-show="sidebarOpen" :class="{ 'rotate-90': employeeManagementOpen }"
+                            class="h-4 w-4 transition-transform ml-auto" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
+                    <!-- Nested Menu -->
+                    <div v-show="employeeManagementOpen" class="ml-10 mt-1 flex flex-col gap-1">
+                        <Link :href="route('pim.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                            isActive(route('pim.index')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
+                        Index
+                        </Link>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <Link :href="route('settings.index')"
+                    class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition">
+                <i class="bx bx-equalizer text-2xl w-6 flex-shrink-0"></i>
                 <span v-show="sidebarOpen" class="whitespace-nowrap">Settings</span>
                 </Link>
             </nav>
         </aside>
+
 
         <!-- Main content with top navigation -->
         <div class="w-full flex flex-col">
@@ -198,7 +224,7 @@ const flashMessage = computed(() => {
 
             <!-- Page Content -->
             <!-- <Notification v-if="flashMessage" :type="flashMessage.type" :message="flashMessage.message" /> -->
-            <main class="flex-1 xl:px-[18rem] lg:px-[10rem] py-6 sm:px-[6rem] px-[5rem]">
+            <main class="flex-1 xl:pl-[18rem] lg:pl-[10rem] py-6 sm:pl-[6rem] pl-[5rem]">
                 <slot />
             </main>
         </div>

@@ -2,6 +2,7 @@
 
 namespace Modules\Setting\App\Models;
 
+use App\Models\Scope\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 // use Modules\Setting\Database\Factories\SettingFactory;
@@ -19,4 +20,14 @@ class Setting extends Model
     // {
     //     // return SettingFactory::new();
     // }
+
+    public static function booted()
+    {
+        static::addGlobalScope(new TenantScope);
+        static::creating(function ($model) {
+            if ($tenant_id = app('tenant')->id) {
+                $model->tenant_id = $tenant_id;
+            }
+        });
+    }
 }

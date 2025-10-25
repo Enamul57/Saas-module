@@ -80,7 +80,17 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from "@/Components/Pagination.vue";
 import { ref, computed, watch } from 'vue';
 import { useForm, Head, router } from '@inertiajs/vue3';
+import { Notyf } from 'notyf';
+import 'notyf/notyf.min.css';
 
+const notyf = new Notyf({
+    duration: 3000,
+    position: {
+        x: 'right',
+        y: 'top',
+    },
+    dismissible: true,
+});
 const props = defineProps({
     users: { type: Object, required: true }
 });
@@ -101,6 +111,7 @@ const refreshUsers = () => {
 const createUser = () => {
     if (!isEditable.value) {
         form.post(route('users.store'), { onSuccess: refreshUsers });
+        notyf.success("User created successfully!");
     } else {
         form.put(route('users.update', { id: editId.value }), {
             preserveState: true,
@@ -109,6 +120,7 @@ const createUser = () => {
                 refreshUsers();
             }
         });
+        notyf.success("User updated successfully!");
     }
 };
 
@@ -130,6 +142,7 @@ const deleteUser = (id: number) => {
     form.delete(route('users.destroy', id), {
         onSuccess: () => refreshUsers()
     });
+    notyf.success("User deleted successfully!");
 };
 
 // ------------------- Pagination -------------------

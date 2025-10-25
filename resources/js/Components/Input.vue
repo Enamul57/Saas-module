@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-const model = defineModel < string | number | undefined > ();
+const model = defineModel<string | number | undefined>();
 
 defineProps({
     label: {
