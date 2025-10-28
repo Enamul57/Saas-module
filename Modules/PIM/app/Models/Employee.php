@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 // use Modules\PIM\Database\Factories\EmployeeFactory;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Modules\PIM\App\Models\PersonalDetail;
 
 class Employee extends Model
 {
@@ -25,6 +27,11 @@ class Employee extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function personal_details(): HasOne
+    {
+        return $this->hasOne(PersonalDetail::class);
     }
 
     public static function booted()

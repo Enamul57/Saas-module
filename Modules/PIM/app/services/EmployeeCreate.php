@@ -53,4 +53,21 @@ class EmployeeCreate
             throw $e; // Rethrow the exception after logging it
         }
     }
+
+    public function updateEmployee(Employee $employee, array $data): Employee
+    {
+        $employee->first_name = $data['first_name'];
+        $employee->middle_name = $data['middle_name'] ?? null;
+        $employee->last_name = $data['last_name'];
+        if (isset($data['img']) && $data['img']) {
+            // Delete old file
+            if ($employee->img) {
+                deleteFile($employee->img);
+            }
+            // Store new file
+            $employee->img = storeFile($data['img'], 'employees');
+        }
+        $employee->save();
+        return $employee;
+    }
 }

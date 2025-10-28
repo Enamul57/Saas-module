@@ -7,21 +7,21 @@
             <nav class="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl shadow-md border border-gray-200">
                 <!-- Add Employee -->
                 <button @click="navigateTo('pim.index')"
-                    class="primary flex items-center gap-2 px-5 py-3 rounded-xl transition-all buttonSize">
+                    :class="['flex items-center gap-2 px-5 py-3 rounded-xl transition-all buttonSize', isActive('pim.index') ? 'primary' : 'secondaryColor']">
                     <i class="bx bx-user-plus text-xl"></i>
                     <span>Add Employee</span>
                 </button>
 
                 <!-- Employee List -->
                 <button @click="navigateTo('PIM.EmployeeList')"
-                    class="primary flex items-center gap-2 px-5 py-3 rounded-xl transition-all buttonSize">
+                    :class="['flex items-center gap-2 px-5 py-3 rounded-xl transition-all buttonSize', isActive('PIM.EmployeeList') ? 'primary' : 'secondaryColor']">
                     <i class="bx bx-list-ul text-xl"></i>
                     <span>Employee List</span>
                 </button>
 
                 <!-- Reports -->
                 <button @click="navigateTo('PIM.Reports')"
-                    class="primary flex items-center gap-2 px-5 py-3 rounded-xl transition-all buttonSize">
+                    :class="['flex items-center gap-2 px-5 py-3 rounded-xl transition-all buttonSize', isActive('PIM.Reports') ? 'primary' : 'secondaryColor']">
                     <i class="bx bx-bar-chart-alt-2 text-xl"></i>
                     <span>Reports</span>
                 </button>
@@ -134,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { Head, router, useForm } from "@inertiajs/vue3";
+import { Head, router, useForm, usePage } from "@inertiajs/vue3";
 import { ref, onMounted, reactive, computed, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Input from "@/Components/Input.vue";
@@ -149,6 +149,20 @@ const notyf = new Notyf({
         y: 'top',
     },
     dismissible: true,
+});
+//route active check
+const page = usePage();
+const currentRoute = computed(() => page.url);
+const isActive = (routeName: string) => {
+    console.log(route().current() === routeName);
+    return route().current() === routeName;
+    return route().current() === routeName;
+    return route().current(routeName);
+}
+const routeList = reactive({
+    addEmployee: route('pim.index'),
+    employeeList: route('PIM.EmployeeList'),
+    reports: route('PIM.Reports'),
 });
 const form = useForm({
     img: null,
@@ -175,6 +189,7 @@ function submitForm() {
     form.post(route("PIM.storeEmployee"), {
         preserveScroll: true,
         onSuccess: () => {
+
             notyf.success("Employee added successfully!");
             form.reset();
             form.showCredentials = false;

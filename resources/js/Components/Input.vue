@@ -15,26 +15,40 @@
             type === 'number' ||
             type === 'tel'
         " :type="type" :placeholder="placeholder" v-model="model" :disabled="disabled"
-            class="bg-white rounded-md md:ml-4 mt-5 shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
+            class="bg-white rounded-md md:ml-4  shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput" />
 
         <!-- Date Input -->
-        <input v-else-if="type === 'Date'" type="date" v-model="model" :class="[
-            'font-inter font-normal text-[14px] leading-[22px] tracking-[0] mdL:ml-4 mt-5 py-2 px-1 outlin-none focus:outline-none',
-            contactLabel.label || 'text-[#121212]',
-            tax == true ? 'text-[#656565]' : '',
-        ]" />
+        <input v-else-if="type === 'Date'" type="date" v-model="model" :placeholder="placeholder" :disabled="disabled"
+            :class="[
+                'bg-white rounded-md md:ml-4 shadow-sm focus:ring-orange-500 focus:border-orange-500 px-2 py-2 borderInput font-inter font-normal text-[14px] leading-[22px] tracking-[0] outline-none focus:outline-none',
+                contactLabel.label || 'text-[#121212]',
+                tax === true ? 'text-[#656565]' : ''
+            ]" />
 
         <!-- Select -->
-        <select v-else-if="type === 'select'" v-model="model"
-            class="md:ml-4 bg-white mt-5 text-[#656565] hover:border-gray-300 focus:border-gray-300 border-0 rounded md:px-3 py-2 outline-none focus:outline-none focus:ring-0">
-            <option disabled selected value="" class="text-[#656565] text-base font-normal">
-                {{ tax !== true ? `Select ${label}` : label }}
-            </option>
-            <option v-for="(option, index) in options" :key="index" :value="option"
-                class="text-[#656565] text-base font-normal">
-                {{ option }}
-            </option>
-        </select>
+        <div v-else-if="type === 'select'" class="relative md:ml-4" @click="toggleDropdown">
+            <div
+                class="borderInput w-full px-3 py-2 rounded-3xl bg-white cursor-pointer shadow-sm flex justify-between items-center text-gray-700">
+                <span>
+                    {{ model || (tax !== true ? `Select ${label}` : label) }}
+                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+
+            <!-- Dropdown List -->
+            <ul v-if="open"
+                class="absolute w-full bg-white shadow rounded mt-1 z-10 max-h-48 overflow-y-auto flex flex-col space-y-1">
+                <li v-for="(option, index) in options" :key="index" @click.stop="selectOption(option)"
+                    class="cursor-pointer px-2 py-1 primary hover:font-bold">
+                    {{ option }}
+                </li>
+            </ul>
+        </div>
 
         <!-- Textarea -->
         <textarea v-else-if="type === 'textarea'" v-model="model" rows="5" :placeholder="placeholder"
@@ -43,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 const model = defineModel<string | number | undefined>();
 
 defineProps({
@@ -79,4 +94,20 @@ defineProps({
         default: false,
     }
 });
+
+const open = ref(false)
+
+function toggleDropdown() {
+    open.value = !open.value
+}
+
+function selectOption(option: string) {
+    model.value = option
+    open.value = false
+}
+
+document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.relative')) open.value = false
+})
 </script>
