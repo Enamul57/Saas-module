@@ -44,6 +44,24 @@ class PIMController extends Controller
             'employee' => $employee
         ]);
     }
+    public function contact_details(Employee $employee)
+    {
+        return Inertia::render('PIM/PIM/ContactDetails', [
+            'employee' => $employee
+        ]);
+    }
+    public function job_details(Employee $employee)
+    {
+        return Inertia::render('PIM/PIM/JobDetails', [
+            'employee' => $employee
+        ]);
+    }
+    public function salary_details(Employee $employee)
+    {
+        return Inertia::render('PIM/PIM/SalaryDetails', [
+            'employee' => $employee
+        ]);
+    }
     /**
      * Store a newly created resource in storage.
      */
