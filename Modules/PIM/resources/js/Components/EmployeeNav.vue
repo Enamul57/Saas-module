@@ -2,7 +2,8 @@
     <aside class="w-64 h-screen bg-white shadow-md border-r border-gray-200 flex flex-col p-4 rounded-xl">
         <h2 class="text-xl font-semibold mb-6 text-gray-700">Employee Menu</h2>
         <!-- Employee Avatar -->
-        <div class="w-full overflow-hidden shadow-md mb-6 flex items-center justify-center p-6 rounded-2xl">
+        <div class="w-full overflow-hidden shadow-md mb-6 flex items-center justify-center p-6 rounded-2xl"
+            v-if="!isActive('PIM.getPersonalDetails')">
             <img v-if="employee?.img" :src="employee.img" alt="Employee Photo"
                 class="w-32 h-32 object-cover borderInput !rounded-full" />
             <span v-else class="text-gray-400 text-sm">No Image</span>

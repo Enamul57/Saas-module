@@ -39,7 +39,10 @@ class Employee extends Model
     {
         return $this->hasOne(Contact::class);
     }
-
+    public function jobDetails(): HasOne
+    {
+        return $this->hasone(JobDetails::class);
+    }
     public static function booted()
     {
         static::addGlobalScope(TenantScope::class);
