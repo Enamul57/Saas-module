@@ -16,37 +16,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pim/{employee}/contact-details', [PIMController::class, 'contact_details'])->name('PIM.ContactDetails');
     Route::get('/pim/{employee}/salary-details', [PIMController::class, 'salary_details'])->name('PIM.SalaryDetails');
     Route::get('/pim/{employee}/job-details', [PIMController::class, 'job_details'])->name('PIM.JobDetails');
-
-    Route::get('/reverse-geocode', function () {
-
-
-        $lat = 23.7747523;
-        $lon = 90.365421;
-        $cacheKey = "reverse_geocode:{$lat}:{$lon}";
-
-        // cache for 12 hours
-        $result = Cache::remember($cacheKey, now()->addHours(12), function () use ($lat, $lon) {
-            $response = Http::withHeaders([
-                'User-Agent' => 'MyLaravelApp/1.0 (your-email@example.com)',
-            ])->get('https://nominatim.openstreetmap.org/reverse', [
-                'format' => 'jsonv2',
-                'lat' => $lat,
-                'lon' => $lon,
-                'addressdetails' => 1,
-            ]);
-
-            return $response->successful() ? $response->json() : null;
-        });
-
-        if (! $result) {
-            return response()->json(['message' => 'Reverse geocoding failed'], 502);
-        }
-
-        return response()->json([
-            'display_name' => $result['display_name'] ?? null,
-            'address' => $result['address'] ?? [],
-            'raw' => $result,
-                
-        ]);
-    });
+    Route::post('/pim/employee/{employee}/contact-details', [PIMController::class, 'storeContactDetails'])->name('PIM.storeContactDetails');
 });

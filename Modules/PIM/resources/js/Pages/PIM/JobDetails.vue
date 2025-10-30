@@ -2,7 +2,7 @@
 
     <Head title="PIM - Job Details" />
     <AuthenticatedLayout>
-        <div class="flex h-screen gap-2 p-6 space-x-2">
+        <div class="flex h-screen p-6">
             <!-- Sidebar -->
             <aside class="w-64  rounded-xl flex flex-col h-full">
                 <EmployeeNav current="PIM.PersonalDetails" :employee="employee" />

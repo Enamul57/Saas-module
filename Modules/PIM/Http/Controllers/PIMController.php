@@ -12,6 +12,7 @@ use Modules\PIM\App\Models\Employee;
 use Modules\PIM\app\services\EmployeeCreate;
 use Modules\PIM\App\Http\Requests\PersonalDetailsRequest;
 use Modules\PIM\App\Models\PersonalDetail;
+use Modules\PIM\App\Http\Requests\ContactRequest;
 
 class PIMController extends Controller
 {
@@ -46,6 +47,7 @@ class PIMController extends Controller
     }
     public function contact_details(Employee $employee)
     {
+        $employee = $employee->load('personal_details', 'contact_details');
         return Inertia::render('PIM/PIM/ContactDetails', [
             'employee' => $employee
         ]);
@@ -145,7 +147,18 @@ class PIMController extends Controller
         }
         return to_route('pim.index');
     }
-
+    //contact details
+    public function storeContactDetails(ContactRequest $request, Employee $employee)
+    {
+        $validated = $request->validated();
+        //update employee email
+        $employee->email = $validated['work_email'];
+        $employee->save();
+        //store or update employee contact
+        $validated['activity_log'] = auth()->id();
+        $employee->contact_details()->updateOrCreate([], $validated);
+        return to_route('PIM.ContactDetails', $employee);
+    }
     /**
      * Remove the specified resource from storage.
      */

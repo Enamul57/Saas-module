@@ -1,7 +1,12 @@
 <template>
     <aside class="w-64 h-screen bg-white shadow-md border-r border-gray-200 flex flex-col p-4 rounded-xl">
         <h2 class="text-xl font-semibold mb-6 text-gray-700">Employee Menu</h2>
-
+        <!-- Employee Avatar -->
+        <div class="w-full overflow-hidden shadow-md mb-6 flex items-center justify-center p-6 rounded-2xl">
+            <img v-if="employee?.img" :src="employee.img" alt="Employee Photo"
+                class="w-32 h-32 object-cover borderInput !rounded-full" />
+            <span v-else class="text-gray-400 text-sm">No Image</span>
+        </div>
         <nav class="flex flex-col gap-3">
             <button v-for="item in menuItems" :key="item.route" @click="navigateTo(item.route)"
                 :class="['flex items-center gap-2 px-5 py-3 rounded-xl transition-all buttonSize', isActive(item.route) ? 'primary' : 'secondaryColor']">

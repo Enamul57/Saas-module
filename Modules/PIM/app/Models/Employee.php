@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\PIM\App\Models\PersonalDetail;
+use Modules\PIM\App\Models\Contact;
 
 class Employee extends Model
 {
@@ -32,6 +33,11 @@ class Employee extends Model
     public function personal_details(): HasOne
     {
         return $this->hasOne(PersonalDetail::class);
+    }
+
+    public function contact_details(): HasOne
+    {
+        return $this->hasOne(Contact::class);
     }
 
     public static function booted()
