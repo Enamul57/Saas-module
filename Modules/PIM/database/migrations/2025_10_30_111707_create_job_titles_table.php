@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('job_titles', function (Blueprint $table) {
-            $table->id();
-            $table->string('job_title_name');
-            $table->foreignId('job_unit_id')
-                ->nullable()
-                ->constrained('job_units')
-                ->nullOnDelete()
-                ->cascadeOnUpdate();
-            $table->unsignedBigInteger('tenant_id');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('job_titles')) {
+            Schema::create('job_titles', function (Blueprint $table) {
+                $table->id();
+                $table->string('job_title_name');
+                $table->unsignedBigInteger('job_unit_id')->nullable();
+                $table->unsignedBigInteger('tenant_id');
+                $table->timestamps();
+
+                // Only add indexes, NO foreign keys
+                $table->index('job_unit_id');
+                $table->index('tenant_id');
+            });
+        }
     }
 
     /**

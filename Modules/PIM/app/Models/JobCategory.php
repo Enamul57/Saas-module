@@ -23,7 +23,7 @@ class JobCategory extends Model
 
     public function units()
     {
-        return $this->haMany(JobUnit::class);
+        return $this->hasMany(JobUnit::class);
     }
     public static function booted()
     {

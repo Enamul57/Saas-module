@@ -1,73 +1,121 @@
 <script setup>
-import { ref, onMounted, useSlots, watch, computed } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
-import Notification from '@/Components/Notification.vue';
-const $slots = useSlots();
+import { ref, computed } from 'vue';
+import { Link, usePage, router } from '@inertiajs/vue3';
+
 const $page = usePage();
-const checkPage = usePage();
 const sidebarOpen = ref(true);
+
+// Toggle states
+const userManagementManual = ref(false);
+const roleManagementManual = ref(false);
+const employeeManagementManual = ref(false);
+const settingsManual = ref(false);
+
+// ✅ Get user data from page props
+const user = computed(() => $page.props.auth?.user);
+
+// ✅ Get roles (already lowercase from backend)
+const userRoles = computed(() => {
+    return user.value?.roles || [];
+});
+
+// ✅ Check if user is Super Admin
+const isSuperAdmin = computed(() => {
+    return userRoles.value.includes('super_admin');
+});
+
+// ✅ Check if user has a specific role (case insensitive)
+const hasRole = (role) => {
+    if (isSuperAdmin.value) return true;
+    return userRoles.value.some(r => r.toLowerCase() === role.toLowerCase());
+};
+
+// ✅ Check if user has any of the given roles
+const hasAnyRole = (roles) => {
+    if (isSuperAdmin.value) return true;
+    const lowerRoles = roles.map(r => r.toLowerCase());
+    return lowerRoles.some(role =>
+        userRoles.value.some(r => r.toLowerCase() === role.toLowerCase())
+    );
+};
+
+// ✅ Check if user has a specific permission
+const can = (permission) => {
+    if (isSuperAdmin.value) return true;
+    const permissions = user.value?.permissions || [];
+    return permissions.includes(permission);
+};
+
+// Debug
+console.log('User:', user.value);
+console.log('User roles:', userRoles.value);
+console.log('Is Super Admin:', isSuperAdmin.value);
+console.log('Has role super_admin:', hasRole('super_admin'));
+console.log('Has any role [super_admin, admin]:', hasAnyRole(['super_admin', 'admin']));
+
+// Toggle functions
 const toggleSidebar = () => {
     sidebarOpen.value = !sidebarOpen.value;
 };
-const userManagementManual = ref(false);
-const employeeManagementManual = ref(false);
-const roleManagementManual = ref(false);
-
-
-const toggleRoleManagement = () => {
-    roleManagementManual.value = !roleManagementManual.value;
-};
-// Array of routes under user management
-const userManagementRoutes = [
-    route('users.index'),
-];
-const roleManagementRoutes = [
-    route('roles.index'),
-    route('permissions.assign'),
-];
-const employeeManagementRoutes = [
-    route('pim.index'),
-];
-const userManagementOpen = computed(() => {
-    return userManagementManual.value || userManagementRoutes.some(r => isActive(r));
-});
-const roleManagementOpen = computed(() => {
-    return roleManagementManual.value || roleManagementRoutes.some(r => isActive(r));
-});
-const employeeManagementOpen = computed(() => {
-    return employeeManagementManual.value || employeeManagementRoutes.some(r => isActive(r));
-});
 
 const toggleUserManagement = () => {
     userManagementManual.value = !userManagementManual.value;
 };
-const toggleEmployeeManagement = computed(() => {
+
+const toggleRoleManagement = () => {
+    roleManagementManual.value = !roleManagementManual.value;
+};
+
+const toggleEmployeeManagement = () => {
     employeeManagementManual.value = !employeeManagementManual.value;
-});
+};
+
+const toggleSettings = () => {
+    settingsManual.value = !settingsManual.value;
+};
+
 // Active route helper
 const currentRoute = computed(() => window.location.pathname);
 const isActive = (routeUrl) => currentRoute.value === routeUrl;
 
-const flashMessage = computed(() => {
-    const flash = $page.props.flash;
-    if (!flash) return null;
+// Routes for active state
+const userManagementRoutes = [route('users.index')];
+const roleManagementRoutes = [route('roles.index'), route('permissions.assign')];
+const employeeManagementRoutes = [route('pim.index'), route('pim.EmployeeList'), route('pim.Reports')];
+const settingsRoutes = [route('settings.index')];
 
-    if (flash.success) return { type: 'success', message: flash.success };
-    if (flash.danger) return { type: 'danger', message: flash.danger };
-    if (flash.warning) return { type: 'warning', message: flash.warning };
-    if (flash.info) return { type: 'info', message: flash.info };
-
-    return null;
+const userManagementOpen = computed(() => {
+    return userManagementManual.value || userManagementRoutes.some(r => isActive(r));
 });
 
-</script>
+const roleManagementOpen = computed(() => {
+    return roleManagementManual.value || roleManagementRoutes.some(r => isActive(r));
+});
 
+const employeeManagementOpen = computed(() => {
+    return employeeManagementManual.value || employeeManagementRoutes.some(r => isActive(r));
+});
+
+const settingsOpen = computed(() => {
+    return settingsManual.value || settingsRoutes.some(r => isActive(r));
+});
+
+// Logout
+const handleLogout = () => {
+    if (confirm('Are you sure you want to logout?')) {
+        router.post('/logout', {}, {
+            onSuccess: () => {
+                window.location.href = '/login';
+            },
+            onError: () => {
+                window.location.href = '/logout';
+            }
+        });
+    }
+};
+</script>
 <template>
     <div class="flex min-h-screen bg-slate-100">
-        <!-- Sidebar -->
         <!-- Sidebar -->
         <aside :class="[
             'sideBarColor fixed inset-y-0 left-0 z-20 flex flex-col transition-all duration-300',
@@ -88,12 +136,29 @@ const flashMessage = computed(() => {
                 <!-- Dashboard -->
                 <Link :href="route('central.dashboard')"
                     class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition">
-                <i class="bx bx-grid-alt text-2xl w-6 flex-shrink-0"></i>
-                <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
+                    <i class="bx bx-grid-alt text-2xl w-6 flex-shrink-0"></i>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap">Dashboard</span>
                 </Link>
 
-                <!-- User Management -->
-                <div class="flex flex-col">
+                <!-- ============================================ -->
+                <!-- ✅ MY PROFILE - Visible to ALL authenticated users -->
+                <!-- ============================================ -->
+                <!-- Check if user has an employee record -->
+                <Link v-if="user?.employee_id" :href="route('pim.getPersonalDetails', user.employee_id)"
+                    class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition">
+                    <i class="bx bx-user-circle text-2xl w-6 flex-shrink-0"></i>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap">My Profile</span>
+                </Link>
+
+                <!-- If no employee record, show a message or hide the link -->
+                <div v-else-if="user" class="flex items-center gap-3 p-3 rounded-md text-gray-400">
+                    <i class="bx bx-user-circle text-2xl w-6 flex-shrink-0"></i>
+                    <span v-show="sidebarOpen" class="whitespace-nowrap text-sm">No profile available</span>
+                </div>
+                <!-- ============================================ -->
+                <!-- ✅ USER MANAGEMENT - Only Super Admin, Admin, HR Manager -->
+                <!-- ============================================ -->
+                <div v-if="hasAnyRole(['super_admin', 'admin', 'hr_manager'])" class="flex flex-col">
                     <button @click="toggleUserManagement"
                         class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition w-full">
                         <i class="las la-user text-2xl w-6 flex-shrink-0"></i>
@@ -104,17 +169,19 @@ const flashMessage = computed(() => {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
-
-                    <!-- Nested Menu -->
                     <div v-show="userManagementOpen" class="ml-10 mt-1 flex flex-col gap-1">
                         <Link :href="route('users.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
                             isActive(route('users.index')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
-                        Users
+                            <i class="bx bx-user text-sm"></i>
+                            Users
                         </Link>
                     </div>
                 </div>
-                <!-- Role Management -->
-                <div class="flex flex-col">
+
+                <!-- ============================================ -->
+                <!-- ✅ ROLE MANAGEMENT - Only Super Admin and Admin -->
+                <!-- ============================================ -->
+                <div v-if="hasAnyRole(['super_admin', 'admin'])" class="flex flex-col">
                     <button @click="toggleRoleManagement"
                         class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition w-full">
                         <i class="las la-user-lock text-2xl w-6 flex-shrink-0"></i>
@@ -125,21 +192,25 @@ const flashMessage = computed(() => {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
-
-                    <!-- Nested Menu -->
                     <div v-show="roleManagementOpen" class="ml-10 mt-1 flex flex-col gap-1">
                         <Link :href="route('roles.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
                             isActive(route('roles.index')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
-                        Roles
+                            <i class="bx bx-lock text-sm"></i>
+                            Roles
                         </Link>
                         <Link :href="route('permissions.assign')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
                             isActive(route('permissions.assign')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
-                        Permissions
+                            <i class="bx bx-key text-sm"></i>
+                            Permissions
                         </Link>
                     </div>
                 </div>
-                <!-- PIM -->
-                <div class="flex flex-col">
+
+                <!-- ============================================ -->
+                <!-- ✅ PIM - Super Admin, Admin, HR Manager, Department Manager -->
+                <!-- ============================================ -->
+                <div v-if="hasAnyRole(['super_admin', 'admin', 'hr_manager', 'department_manager'])"
+                    class="flex flex-col">
                     <button @click="toggleEmployeeManagement"
                         class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition w-full">
                         <i class="las la-users text-2xl w-6 flex-shrink-0"></i>
@@ -150,25 +221,49 @@ const flashMessage = computed(() => {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
-
-                    <!-- Nested Menu -->
                     <div v-show="employeeManagementOpen" class="ml-10 mt-1 flex flex-col gap-1">
-                        <Link :href="route('pim.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                        <Link v-if="can('view_employees')" :href="route('pim.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
                             isActive(route('pim.index')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
-                        Index
+                            <i class="bx bx-list-ul text-sm"></i>
+                            Employee List
+                        </Link>
+                        <Link v-if="can('create_employee')" :href="route('pim.create')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                            isActive(route('pim.create')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
+                            <i class="bx bx-user-plus text-sm"></i>
+                            Add Employee
+                        </Link>
+                        <Link v-if="can('view_reports')" :href="route('pim.Reports')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                            isActive(route('pim.Reports')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
+                            <i class="bx bx-bar-chart-alt-2 text-sm"></i>
+                            Reports
                         </Link>
                     </div>
                 </div>
 
-                <!-- Settings -->
-                <Link :href="route('settings.index')"
-                    class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition">
-                <i class="bx bx-equalizer text-2xl w-6 flex-shrink-0"></i>
-                <span v-show="sidebarOpen" class="whitespace-nowrap">Settings</span>
-                </Link>
+                <!-- ============================================ -->
+                <!-- ✅ SETTINGS - Only Super Admin and Admin -->
+                <!-- ============================================ -->
+                <div v-if="hasAnyRole(['super_admin', 'admin'])" class="flex flex-col">
+                    <button @click="toggleSettings"
+                        class="flex items-center gap-3 p-3 rounded-md sideBarMenuColor hover:bg-[#FF9B00] hover:text-white transition w-full">
+                        <i class="bx bx-equalizer text-2xl w-6 flex-shrink-0"></i>
+                        <span v-show="sidebarOpen" class="flex-1 text-left">Settings</span>
+                        <svg v-show="sidebarOpen" :class="{ 'rotate-90': settingsOpen }"
+                            class="h-4 w-4 transition-transform ml-auto" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <div v-show="settingsOpen" class="ml-10 mt-1 flex flex-col gap-1">
+                        <Link :href="route('settings.index')" :class="['flex items-center gap-2 p-2 rounded-md text-sm transition hover:bg-[#EBE389] hover:text-slate-700',
+                            isActive(route('settings.index')) ? 'bg-[#FF9B00] text-white' : 'sideBarMenuColor']">
+                            <i class="bx bx-cog text-sm"></i>
+                            General Settings
+                        </Link>
+                    </div>
+                </div>
             </nav>
         </aside>
-
 
         <!-- Main content with top navigation -->
         <div class="w-full flex flex-col">
@@ -176,43 +271,36 @@ const flashMessage = computed(() => {
             <nav
                 class="border-b border-gray-100 header flex justify-between px-4 py-3 items-center relative left-0 w-full z-10">
                 <div class="w-full ml-[14%] flex justify-between items-center toggleNav">
-                    <div class="flex items-center gap-4 ">
-                        <span class="md:text-lg font-semibold text-sm ml-4 ">HRM Dashboard</span>
+                    <div class="flex items-center gap-4">
+                        <span class="md:text-lg font-semibold text-sm ml-4">HRM Dashboard</span>
                     </div>
-                    <div class=" sm:ms-6 sm:flex sm:items-center">
-                        <!-- Settings Dropdown -->
-                        <div class="relative ms-3">
-                            <Dropdown align="right" width="48">
-                                <template #trigger>
-                                    <span class="inline-flex rounded-md">
-                                        <button type="button"
-                                            class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none">
-                                            {{ $page.props.auth.user.name }}
-
-                                            <svg class="-me-0.5 ms-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd"
-                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                    clip-rule="evenodd" />
-                                            </svg>
-                                        </button>
-                                    </span>
+                    <div class="sm:ms-6 sm:flex sm:items-center gap-4">
+                        <!-- User Info -->
+                        <div class="text-sm text-gray-600 hidden sm:block">
+                            <span class="font-medium">{{ $page.props.auth?.user?.name || 'Guest' }}</span>
+                            <span class="text-gray-400 text-xs ml-2">
+                                <!-- ✅ Check both roles array and role string -->
+                                <template
+                                    v-if="$page.props.auth?.user?.roles && $page.props.auth.user.roles.length > 0">
+                                    ({{ $page.props.auth.user.roles.join(', ') }})
                                 </template>
-
-                                <template #content>
-                                    <DropdownLink href="#">
-                                        Profile
-                                    </DropdownLink>
-                                    <DropdownLink :href="route('logout')" method="post" as="button">
-                                        Log Out
-                                    </DropdownLink>
+                                <template v-else-if="$page.props.auth?.user?.role">
+                                    ({{ $page.props.auth.user.role }})
                                 </template>
-                            </Dropdown>
+                                <template v-else>
+                                    (No roles)
+                                </template>
+                            </span>
                         </div>
+
+                        <!-- Logout Button -->
+                        <button @click="handleLogout"
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2">
+                            <i class="bx bx-log-out"></i>
+                            <span>Logout</span>
+                        </button>
                     </div>
                 </div>
-
-
             </nav>
 
             <!-- Page Heading -->
@@ -223,10 +311,13 @@ const flashMessage = computed(() => {
             </header>
 
             <!-- Page Content -->
-            <!-- <Notification v-if="flashMessage" :type="flashMessage.type" :message="flashMessage.message" /> -->
             <main class="flex-1 xl:pl-[18rem] lg:pl-[10rem] py-6 sm:pl-[6rem] pl-[5rem]">
                 <slot />
             </main>
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Your existing styles */
+</style>

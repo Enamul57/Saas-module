@@ -15,14 +15,30 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = $request->query('per_page', 10);
-        $users = User::whereNot('id', auth()->id())
-            ->orderBy('id', 'desc')
-            ->paginate($perPage) // Laravel pagination
-            ->withQueryString(); // keep search/filter query
+        // ✅ Load roles relationship
+        $users = User::with('roles')
+            ->when($request->search, function ($query, $search) {
+                return $query->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%");
+            })
+            ->paginate(10);
+
+        // ✅ Transform users to include roles
+        $users->getCollection()->transform(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->roles->pluck('name')->toArray(),
+                'role' => $user->roles->first()?->name,
+                'is_active' => $user->is_active,
+                'created_at' => $user->created_at,
+            ];
+        });
 
         return Inertia::render('UserManagement/User/Index', [
-            'users' => $users
+            'users' => $users,
+            'filters' => $request->only(['search']),
         ]);
     }
 

@@ -95,7 +95,8 @@ class ModulesController extends Controller
             'role_id' => ['required', 'exists:roles,id'],
         ]);
 
-        $role = \Spatie\Permission\Models\Role::findById($roleId);
+        // ✅ Use TenantRole
+        $role = Role::findById($roleId);
         $role->features()->sync(collect($validated['modules'])->mapWithKeys(fn($id) => [
             $id => ['tenant_id' => session('tenant_id')]
         ])->toArray());
@@ -111,28 +112,34 @@ class ModulesController extends Controller
         ]);
 
         $user = User::findOrFail($validated['user_id']);
+
+        // ✅ Use TenantRole instead of Spatie Role
         $role = Role::findById($validated['role_id']);
+
         if ($user && $role) {
             $user->roles()->syncWithoutDetaching([
                 $role->id => [
                     'tenant_id' => session('tenant_id'),
                 ]
             ]);
-            $user->update(['role' => $role->name]);
+
+            // ✅ Force lowercase when updating the role column
+            $user->update(['role' => strtolower($role->name)]);
+
             return to_route('roles.index')->with('info', 'Role assigned to user successfully.');
         }
 
         return to_route('roles.index')->with('error', 'User or Role not found.');
     }
-    //rele permission
     public function assignRolePermission(Request $request, $roleId)
     {
+        // ✅ Use TenantRole
         $role = Role::findOrFail($roleId);
 
         $modules = $request->modules;
         $allPermissionIds = collect($modules)
-            ->flatten()          // merge all arrays into one
-            ->filter(fn($id) => $id > 0) // remove empty / invalid IDs
+            ->flatten()
+            ->filter(fn($id) => $id > 0)
             ->mapWithKeys(fn($id) => [
                 $id => ['tenant_id' => session('tenant_id')]
             ])

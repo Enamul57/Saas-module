@@ -8,6 +8,7 @@ use App\Models\Scope\TenantScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Modules\PIM\App\Models\Employee as ModelsEmployee;
 use Modules\PIM\Models\Employee;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -46,20 +47,21 @@ class User extends Authenticatable
         ];
     }
 
-    public function setRoleAttribute($value)
-    {
-        $this->attributes['role'] = strtolower($value);
-    }
     public function getRoleAttribute($value)
     {
-        $this->attributes['role'] = ucfirst($value);
+        return $value ? strtolower($value) : null;
     }
+
     public function employee()
     {
-        return $this->hasOne(Employee::class);
+        return $this->hasOne(ModelsEmployee::class);
     }
     public static function booted()
     {
         static::addGlobalScope(new TenantScope);
+    }
+    public function setRoleAttribute($value)
+    {
+        $this->attributes['role'] = $value ? strtolower($value) : null;
     }
 }

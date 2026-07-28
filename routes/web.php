@@ -18,65 +18,72 @@ use Modules\UserManagement\Http\Controllers\UserController;
 use Modules\UserManagement\Http\Controllers\UserManagementController;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-//checking web routes
 
-Route::middleware(['web', IdentifyTenant::class]) // ensure session/auth/web middlewares apply
-    ->group(function () {
-        // Central routes
+// Main web routes with tenant identification
+Route::middleware(['web', IdentifyTenant::class])->group(function () {
 
-        Route::get('/', function () {
-            return Inertia::render('Welcome', [
-                'canLogin' => Route::has('central.login'),
-                'canRegister' => Route::has('central.register'),
-                'laravelVersion' => Application::VERSION,
-                'phpVersion' => PHP_VERSION,
-            ]);
-        });
+    // Public routes (no auth required)
+    Route::get('/', function () {
+        return Inertia::render('Welcome', [
+            'canLogin' => Route::has('central.login'),
+            'canRegister' => Route::has('central.register'),
+            'laravelVersion' => Application::VERSION,
+            'phpVersion' => PHP_VERSION,
+        ]);
+    });
+
+    // Auth routes (no auth required)
+    require __DIR__ . '/auth.php';
+
+    // Authenticated routes with permission checks
+    Route::middleware(['auth', 'verified'])->group(function () {
+
+        // Dashboard - Only users with view_dashboard permission
         Route::get('/dashboard', function () {
             return Inertia::render('Dashboard');
-        })->middleware(['auth', 'verified'])->name('central.dashboard');
+        })
+            ->middleware('permission:view_dashboard')
+            ->name('central.dashboard');
 
-        Route::get('/tests', function () {
-            dd(app('tenant')->toArray());
-            $domain = config('app.domain');
-            $parts = explode('.', $domain);
-            $split = count($parts) > 2 ? 'ok.' . implode('.', array_slice($parts, 1)) : 'ok.' . implode('.', $parts);
-            dd($split);
-            $session_domain = explode('.', config('app.domain'))[1];
-            dd($session_domain);
+        // Profile routes - Self only
+        Route::get('/profile', [ProfileController::class, 'edit'])
+            ->name('profile.edit');
+
+        // Tenant management - Admin only
+        Route::resource('company', TenantController::class)
+            ->middleware('permission:manage_tenants');
+
+        // Test routes (remove in production)
+        Route::get('/test', function () {
+            $user = Auth::user();
+            $roles = $user->getRoleNames();
+            $permissions = $user->getAllPermissions();
+            dd($roles->toArray());
         });
-        Route::middleware(['auth'])->group(function () {
-            Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-            // Route::patch('/profile', [ProfileController::class, 'update'])->name('central.profile.update');
-            // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('central.profile.destroy');
 
-            //create tenant 
-            Route::resource('company', TenantController::class);
-            Route::get('/test', function () {
-                $user = Auth::user();
-                $roles = $user->getRoleNames();
-                //get all permissions
-                $permissions = $user->getAllPermissions();
-                //get permssion through roles
-
-                dd($permissions->toArray());
-            });
-            //test permission
-            Route::get('/permission', function () {
-                dd(auth()->user()->roles()->with(['permissions'])->get()->toArray());
-                $userPermissions = auth()->user()->roles()
-                    ->with(['permissions'])
-                    ->get()
-                    ->pluck('permissions.*.slug') // or id
-                    ->flatten()
-                    ->unique();
-                dd($userPermissions->toArray());
-                $getRolesId = auth()->user()->roles()->pluck('id');
-                $getFeatures = Role::whereIn('id', $getRolesId)->with('features')->get()->pluck('features.*.slug')->flatten();
-                $featureIds = Feature::whereIn('slug', $getFeatures)->pluck('id');
-                $getPermissionThroughFeatureRole = RolePermissionFeature::whereIn('feature_id', $featureIds)->whereIn('role_id', $getRolesId)->get();
-                dd($getPermissionThroughFeatureRole->toArray());
-            });
+        Route::get('/permission', function () {
+            dd(auth()->user()->roles()->with(['permissions'])->get()->toArray());
         });
-        require __DIR__ . '/auth.php';
     });
+});
+Route::get('/debug-auth', function () {
+    $user = auth()->user();
+    if (!$user) {
+        return ['message' => 'Not logged in'];
+    }
+
+    return [
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'roles' => $user->getRoleNames()->toArray(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        ]
+    ];
+});
+// Load module routes separately
+require __DIR__ . '/modules/pim.php';
+// require __DIR__ . '/modules/user-management.php';
+// require __DIR__ . '/modules/attendance.php';

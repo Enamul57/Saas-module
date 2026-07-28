@@ -22,11 +22,5 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
-        // Collection::macro('toUcFirst', function ($field = 'key', $valueField = 'value') {
-        //     return $this->mapWithKeys(function ($item) use ($field, $valueField) {
-        //         $formatedKey = ucfirst(str_replace('_', ' ', $item[$field]));
-        //         return [$formatedKey => $item[$valueField], $item['group'] => $item['group']];
-        //     });
-        // });
     }
 }

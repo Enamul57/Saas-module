@@ -6,17 +6,23 @@ use App\Models\Company;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Feature as Modules;
-use App\Models\Tenant;
 
 class ModulesSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        //
-        $company = Company::firstOrFail();
+        // Create company if it doesn't exist
+        $company = Company::firstOrCreate(
+            ['domain' => 'central.test'],
+            [
+                'company_name' => 'Tech lab33',
+                'domain' => 'central.test',
+                'email' => 'info@techlab33.com',
+            ]
+        );
+
+        $this->command->info('✅ Company ready: ' . $company->id);
+
         $modules = [
             ['name' => 'User Management'],
             ['name' => 'Role & Permission Management'],
@@ -30,13 +36,17 @@ class ModulesSeeder extends Seeder
             ['name' => 'Dashboard Management'],
             ['name' => 'Floor Management'],
             ['name' => 'Settings'],
-
         ];
+
         $data = collect($modules)->map(fn($module) => [
             'name' => $module['name'],
             'slug' => \Str::slug(strtolower($module['name'])),
             'tenant_id' => $company->id,
         ])->toArray();
-        Modules::insert($data);
+
+        // Use upsert to avoid duplicates
+        Modules::upsert($data, ['slug', 'tenant_id'], ['name']);
+
+        $this->command->info('✅ ' . count($data) . ' modules seeded successfully!');
     }
 }

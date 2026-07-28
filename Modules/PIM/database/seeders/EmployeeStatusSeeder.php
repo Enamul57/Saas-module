@@ -3,7 +3,7 @@
 namespace Modules\PIM\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Modules\PIM\Models\EmployeeStatus;
+use Modules\PIM\App\Models\EmployeeStatus;
 
 class EmployeeStatusSeeder extends Seeder
 {
@@ -12,18 +12,26 @@ class EmployeeStatusSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call([]);
+        // Get the current tenant ID
+        $tenantId = app('tenant')->id ?? 1;
+
         $statuses = [
-            ['employee_status' => 'Active'],
-            ['employee_status' => 'Intern'],
-            ['employee_status' => 'Probation'],
-            ['employee_status' => 'Part Time'],
-            ['employee_status' => 'Resigned'],
-            ['employee_status' => 'Terminated'],
-            ['employee_status' => 'Retired'],
+            ['employee_status' => 'Active', 'tenant_id' => $tenantId],
+            ['employee_status' => 'Intern', 'tenant_id' => $tenantId],
+            ['employee_status' => 'Probation', 'tenant_id' => $tenantId],
+            ['employee_status' => 'Part Time', 'tenant_id' => $tenantId],
+            ['employee_status' => 'Resigned', 'tenant_id' => $tenantId],
+            ['employee_status' => 'Terminated', 'tenant_id' => $tenantId],
+            ['employee_status' => 'Retired', 'tenant_id' => $tenantId],
         ];
+
         foreach ($statuses as $status) {
-            EmployeeStatus::firstOrCreate($status);
+            EmployeeStatus::firstOrCreate(
+                ['employee_status' => $status['employee_status']],
+                $status
+            );
         }
+
+        $this->command->info('✅ Employee statuses seeded successfully!');
     }
 }

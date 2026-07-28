@@ -13,16 +13,19 @@ class TenantServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
         $this->app->singleton('tenant', function ($app) {
             $tenant_id = session('tenant_id');
             if ($tenant_id) {
                 return Company::findOrFail($tenant_id);
             }
+
             $host = request()->getHost();
             Log::info('request host ' . $host);
-            $company = Company::where('company', $host)->first();
-            Log::info('app service provider ' . $company);
+
+            // Use the correct column name - 'domain' instead of 'company'
+            $company = Company::where('domain', $host)->first();
+
+            Log::info('app service provider ' . ($company ? $company->id : 'not found'));
             return $company;
         });
     }

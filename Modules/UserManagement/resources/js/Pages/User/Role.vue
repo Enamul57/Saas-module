@@ -111,7 +111,6 @@
                     </button>
                 </div>
             </div>
-            <!--table of roles-->
             <!-- roles table -->
             <div class="bg-white shadow rounded p-4">
                 <h3 class="text-base font-medium mb-3">Roles List</h3>
@@ -125,7 +124,7 @@
                         </button>
                         <Link :href="route('permission.role.index', { id: row.id })"
                             class="text-green-500 hover:underline text-sm font-semibold">
-                        Set Permissions
+                            Set Permissions
                         </Link>
                     </template>
                 </TableComponent>

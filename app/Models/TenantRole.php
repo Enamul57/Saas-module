@@ -11,8 +11,19 @@ use Spatie\Permission\Exceptions\RoleAlreadyExists;
 
 class TenantRole extends Role
 {
-    //
     protected $fillable = ['name', 'guard_name', 'tenant_id'];
+
+    // ✅ ADD THIS - Force lowercase when retrieving
+    public function getNameAttribute($value)
+    {
+        return $value ? strtolower($value) : null;
+    }
+
+    // ✅ ADD THIS - Force lowercase when setting
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = $value ? strtolower($value) : null;
+    }
 
     public static function create(array $attributes = [])
     {
@@ -32,10 +43,12 @@ class TenantRole extends Role
         }
         return static::query()->create($attributes);
     }
+
     public function features(): BelongsToMany
     {
         return $this->belongsToMany(Feature::class, 'feature_role', 'role_id', 'feature_id');
     }
+
     public static function booted()
     {
         // Apply global scope for tenant isolation

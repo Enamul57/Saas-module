@@ -19,16 +19,27 @@ class UserManagementController extends Controller
     public function index()
     {
         $authUser = auth()->user();
-        if ($authUser->hasRole('Admin')) {
+
+        // ✅ Check for super_admin OR admin (case insensitive)
+        $isAdmin = $authUser->hasRole('super_admin') ||
+            $authUser->hasRole('admin') ||
+            $authUser->hasRole('Admin') ||
+            $authUser->hasRole('Super_admin');
+
+        if ($isAdmin) {
             $roles = Role::all();
         } else {
+            // For non-admin users, only show their own roles or roles they can manage
             $roles = Role::whereIn('id', $authUser->roles->pluck('id'))->get();
         }
+
         if ($roles->isEmpty()) {
             return Inertia::render('UserManagement/User/Role');
         }
+
         $modules = Modules::all();
         $users = User::whereNot('id', auth()->id())->get();
+
         return Inertia::render('UserManagement/User/Role', [
             'roles' => $roles,
             'modules' => $modules,

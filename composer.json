@@ -35,6 +35,8 @@
         },
         "files":[
              "app/Helpers/FileHelper.php"
+             , "app/Helpers/PermissionHelper.php"
+
         ]
     },
     "autoload-dev": {

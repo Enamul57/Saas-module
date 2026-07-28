@@ -13,29 +13,69 @@ use Modules\PIM\app\services\EmployeeCreate;
 use Modules\PIM\App\Http\Requests\PersonalDetailsRequest;
 use Modules\PIM\App\Models\PersonalDetail;
 use Modules\PIM\App\Http\Requests\ContactRequest;
+use Modules\PIM\App\Models\JobCategory;
+use Modules\PIM\App\Models\JobTitle;
+use Modules\PIM\App\Models\JobUnit;
 
 class PIMController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     protected $employeeCreate;
 
     public function __construct(EmployeeCreate $employeeCreate)
     {
         $this->employeeCreate = $employeeCreate;
     }
-    public function index()
+
+    public function index(Request $request)
     {
-        return Inertia::render('PIM/PIM/Index');
+        // Fetch employees with their related data
+        $employees = Employee::with(['personal_details', 'contact_details', 'jobDetails'])
+            ->when($request->search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'LIKE', "%{$search}%")
+                        ->orWhere('last_name', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%")
+                        ->orWhere('employee_id', 'LIKE', "%{$search}%");
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return Inertia::render('PIM/PIM/Index', [
+            'employees' => $employees,
+            'filters' => $request->only(['search'])
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return view('pim::create');
+        return Inertia::render('PIM/PIM/Create');
+    }
+
+    public function store(EmployeeStore $request)
+    {
+        $employee = $this->employeeCreate->createEmployee($request->validated());
+        return to_route('pim.getPersonalDetails', $employee->id);
+    }
+
+    public function show($id)
+    {
+        return Inertia::render('PIM/PIM/Show', ['employee' => Employee::with(['personal_details', 'contact_details', 'jobDetails'])->findOrFail($id)]);
+    }
+
+    public function edit($id)
+    {
+        return Inertia::render('PIM/PIM/Edit', ['employee' => Employee::findOrFail($id)]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        // Update logic
+    }
+
+    public function destroy($id)
+    {
+        // Delete logic
     }
 
     public function personal_details(Employee $employee)
@@ -45,6 +85,12 @@ class PIMController extends Controller
             'employee' => $employee
         ]);
     }
+
+    public function storePersonalDetails(Request $request, Employee $employee)
+    {
+        // ... your existing code ...
+    }
+
     public function contact_details(Employee $employee)
     {
         $employee = $employee->load('personal_details', 'contact_details');
@@ -52,115 +98,121 @@ class PIMController extends Controller
             'employee' => $employee
         ]);
     }
+
+    public function storeContactDetails(ContactRequest $request, Employee $employee)
+    {
+        // ... your existing code ...
+    }
+
     public function job_details(Employee $employee)
     {
+        $employee->load(['jobDetails', 'jobDetails.jobCategory', 'jobDetails.jobTitle', 'jobDetails.jobUnit']);
+
+        $jobCategories = JobCategory::all();
+        $jobTitles = JobTitle::all();
+        $jobUnits = JobUnit::all();
+
+        $managers = Employee::where('id', '!=', $employee->id)
+            ->select('id', 'first_name', 'last_name', 'email', 'img')
+            ->get();
+
         return Inertia::render('PIM/PIM/JobDetails', [
-            'employee' => $employee
+            'employee' => $employee,
+            'jobCategories' => $jobCategories,
+            'jobTitles' => $jobTitles,
+            'jobUnits' => $jobUnits,
+            'managers' => $managers,
         ]);
     }
+
+    public function storeJobDetails(Request $request, Employee $employee)
+    {
+        $validated = $request->validate([
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'job_category' => ['nullable', 'string', 'max:255'],
+            'job_unit' => ['nullable', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'employee_status' => ['nullable', 'string', 'max:255'],
+            'joining_date' => ['nullable', 'date'],
+            'contract_start_date' => ['nullable', 'date'],
+            'contract_end_date' => ['nullable', 'date'],
+            'job_category_id' => ['nullable', 'exists:job_categories,id'],
+            'job_title_id' => ['nullable', 'exists:job_titles,id'],
+            'job_unit_id' => ['nullable', 'exists:job_units,id'],
+            'employment_status' => ['nullable', 'string', 'max:255'],
+            'employee_type' => ['nullable', 'string', 'max:255'],
+            'work_location' => ['nullable', 'string', 'max:255'],
+            'shift' => ['nullable', 'string', 'max:255'],
+            'job_description' => ['nullable', 'string'],
+            'responsibilities' => ['nullable', 'string'],
+            'qualifications' => ['nullable', 'string'],
+            'reports_to' => ['nullable', 'exists:employees,id'],
+            'confirmation_date' => ['nullable', 'date'],
+            'termination_date' => ['nullable', 'date'],
+        ]);
+
+        $validated['activity_log'] = auth()->id();
+
+        $jobDetails = $employee->jobDetails()->updateOrCreate([], $validated);
+
+        return to_route('pim.JobDetails', $employee)->with('success', 'Job details saved successfully!');
+    }
+
     public function salary_details(Employee $employee)
     {
         return Inertia::render('PIM/PIM/SalaryDetails', [
             'employee' => $employee
         ]);
     }
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(EmployeeStore $request)
-    {
 
-        $employee = $this->employeeCreate->createEmployee($request->validated());
-        return to_route('PIM.getPersonalDetails', $employee->id);
-    }
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
+    public function employeeList(Request $request)
     {
-        return view('pim::show');
-    }
+        $employees = Employee::with([
+            'personal_details',
+            'contact_details',
+            'jobDetails.jobCategory',
+            'jobDetails.jobTitle',
+            'jobDetails.jobUnit'
+        ])
+            ->when($request->search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'LIKE', "%{$search}%")
+                        ->orWhere('last_name', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%")
+                        ->orWhere('employee_id', 'LIKE', "%{$search}%");
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('pim::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-    /**
-     * Create or Update Personal Details
-     */
-    public function storePersonalDetails(Request $request, Employee $employee)
-    {
-        //check if image exist or not of employee
-        if ($request->hasFile('img')) {
-            $employee->img ? deleteFile($employee->img) : null;
-            $this->employeeCreate->updateEmployee($employee, $request->only(['first_name', 'middle_name', 'last_name', 'img']));
-        }
-        //employee validation && update
-        if (!$request->hasFile('img')) {
-            $this->employeeCreate->updateEmployee($employee, $request->only(['first_name', 'middle_name', 'last_name']));
-        }
-        //pim create or update with validation
-        $pim_validation = $request->validate([
-            'first_name'       => ['required', 'string', 'max:255'],
-            'middle_name'      => ['nullable', 'string', 'max:255'],
-            'last_name'        => ['required', 'string', 'max:255'],
-            'dob'              => ['required', 'date', 'before:today'],
-            'gender'           => ['required', Rule::in(['Male', 'Female'])],
-            'marital_status'   => ['required', Rule::in(['Single', 'Married', 'Divorced', 'Widowed'])],
-            'nationality'      => ['required', 'string', 'max:255'],
-            'religion'         => ['nullable', 'string', 'max:255'],
-            'blood_group'      => ['nullable', 'string', 'max:3'], // e.g., O+, AB-
-            'national_id'     => [
-                'required',
-                'string',
-                'max:20',
-                Rule::unique('personal_details', 'national_id')->ignore($employee->id, 'employee_id')
-            ],
-            'passport_number'  => ['nullable', 'string', 'max:50'],
-            'signature'        => ['nullable', 'image', 'max:2048'], // max 2MB
-            'activity_log'     => ['nullable', 'string'],
+        return Inertia::render('PIM/PIM/EmployeeList', [
+            'employees' => $employees,
+            'filters' => $request->only(['search'])
         ]);
-        $pim_validation['activity_log'] = (string)auth()->id();
-        if ($request->hasFile('signature')) {
-            $employee?->personal_details?->signature  ? deleteFile($employee?->personal_details->signature) : null;
-            $pim_validation['signature'] = storeFile($request->file('signature'), 'signatures');
-        } else {
-            unset($pim_validation['signature']);
-        }
-        // ✅ Correct relationship usage
-        $pim = $employee->personal_details()->updateOrCreate([], $pim_validation);
-        //upload attachments
-        if ($request->hasFile('attachments')) {
-            $pim?->attachments  ? deleteFile($pim->attachments) : null;
-            uploadAttachments($pim, $request->file('attachments'), 'employee_attachments');
-        } else {
-            unset($pim_validation['attachments']);
-        }
-        return to_route('pim.index');
     }
-    //contact details
-    public function storeContactDetails(ContactRequest $request, Employee $employee)
+
+    public function reports(Request $request)
     {
-        $validated = $request->validated();
-        //update employee email
-        $employee->email = $validated['work_email'];
-        $employee->save();
-        //store or update employee contact
-        $validated['activity_log'] = auth()->id();
-        $employee->contact_details()->updateOrCreate([], $validated);
-        return to_route('PIM.ContactDetails', $employee);
+        // Basic statistics
+        $stats = [
+            'total_employees' => Employee::count(),
+            // ✅ Fix: Use 'employee_status' instead of 'employment_status'
+            'active_employees' => Employee::whereHas('jobDetails', function ($query) {
+                $query->where('employee_status', 'active');
+            })->count(),
+            'total_departments' => JobCategory::count(),
+            'new_hires' => Employee::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count(),
+            'departments' => JobCategory::withCount('jobDetails')->get(),
+            'recent_hires' => Employee::with(['personal_details'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+        ];
+
+        return Inertia::render('PIM/PIM/Reports', [
+            'stats' => $stats
+        ]);
     }
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }
