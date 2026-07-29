@@ -43,11 +43,44 @@ class UserController extends Controller
     }
 
     /**
+     * Search users for linking to employees.
+     */
+    public function search(Request $request)
+    {
+        try {
+            $query = $request->get('q');
+
+            if (empty($query) || strlen($query) < 2) {
+                return response()->json([]);
+            }
+
+            // ✅ Get users that don't have an employee record
+            $users = User::where(function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                    ->orWhere('email', 'LIKE', "%{$query}%");
+            })
+                ->whereNotIn('id', function ($q) {
+                    $q->select('user_id')
+                        ->from('employees')
+                        ->whereNotNull('user_id');
+                })
+                ->where('id', '!=', auth()->id())
+                ->limit(10)
+                ->get(['id', 'name', 'email']);
+
+            return response()->json($users);
+        } catch (\Exception $e) {
+            \Log::error('Search error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        return view('usermanagement::create');
+        return Inertia::render('UserManagement/User/Create');
     }
 
     /**
@@ -63,7 +96,7 @@ class UserController extends Controller
         $data['tenant_id'] = session('tenant_id');
         // Create user in DB
         User::create($data);
-        return to_route('users.index')->with('success', 'User Created Successfully');
+        return to_route('admin.users.index')->with('success', 'User Created Successfully');
     }
 
     /**
@@ -71,7 +104,11 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        return view('usermanagement::show');
+        // ✅ Return Inertia instead of view
+        $user = User::with('roles')->findOrFail($id);
+        return Inertia::render('UserManagement/User/Show', [
+            'user' => $user
+        ]);
     }
 
     /**
@@ -79,7 +116,11 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        return view('usermanagement::edit');
+        // ✅ Return Inertia instead of view
+        $user = User::with('roles')->findOrFail($id);
+        return Inertia::render('UserManagement/User/Edit', [
+            'user' => $user
+        ]);
     }
 
     /**
@@ -96,7 +137,7 @@ class UserController extends Controller
             $validated['password'] = $request->password;
         }
         $user->update($validated);
-        return to_route('users.index')->with('info', 'User Updated Successfully');
+        return to_route('admin.users.index')->with('info', 'User Updated Successfully');
     }
 
     /**
@@ -105,6 +146,6 @@ class UserController extends Controller
     public function destroy($id)
     {
         User::find($id)->delete();
-        return to_route('users.index')->with('danger', 'User Deleted Successfully');
+        return to_route('admin.users.index')->with('danger', 'User Deleted Successfully');
     }
 }

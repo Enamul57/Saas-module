@@ -7,7 +7,6 @@ use App\Models\Feature as Modules;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use PhpParser\Node\Expr\AssignOp\Mod;
 use App\Models\TenantRole as Role;
 use Illuminate\Validation\Rule;
 
@@ -34,12 +33,14 @@ class UserManagementController extends Controller
         }
 
         if ($roles->isEmpty()) {
+            // ✅ Use module notation: UserManagement/User/Role
             return Inertia::render('UserManagement/User/Role');
         }
 
         $modules = Modules::all();
         $users = User::whereNot('id', auth()->id())->get();
 
+        // ✅ Use module notation: UserManagement/User/Role
         return Inertia::render('UserManagement/User/Role', [
             'roles' => $roles,
             'modules' => $modules,
@@ -64,9 +65,12 @@ class UserManagementController extends Controller
             'name' => 'required|string|max:255',
         ]);
 
-        Role::firstOrCreate(['name' => strtolower($validated['name'])]);
+        Role::firstOrCreate([
+            'name' => strtolower($validated['name']),
+            'tenant_id' => session('tenant_id') ?? 1,
+        ]);
 
-        return to_route('roles.index')->with('success', 'Role created successfully.');
+        return to_route('admin.roles.index')->with('success', 'Role created successfully.');
     }
 
     /**
@@ -91,13 +95,18 @@ class UserManagementController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('roles')->ignore($id)->where(fn($q) => $q->where('tenant_id', session('tenant_id')))],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('roles')->ignore($id)->where(fn($q) => $q->where('tenant_id', session('tenant_id') ?? 1))
+            ],
         ]);
+
         $role = Role::findById($id);
+        $role->update(['name' => strtolower($validated['name'])]);
 
-        $role->update(['name' => $validated['name']]);
-
-        return to_route('roles.index')->with('info', 'Role updated successfully.');
+        return to_route('admin.roles.index')->with('info', 'Role updated successfully.');
     }
 
     /**
@@ -106,6 +115,6 @@ class UserManagementController extends Controller
     public function destroy(Role $role)
     {
         $role->delete();
-        return to_route('roles.index')->with('danger', 'Role deleted successfully.');
+        return to_route('admin.roles.index')->with('danger', 'Role deleted successfully.');
     }
 }

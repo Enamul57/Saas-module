@@ -92,7 +92,7 @@
                                 <td class="px-3 py-3">
                                     <div class="flex items-center justify-center">
                                         <div
-                                            class="w-12 h-12 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                                            class="w-12 h-12 rounded-full overflow-hidden border border-gray-200 flex-shrink-0 bg-gray-100">
                                             <img :src="getEmployeeImage(employee)" :alt="employee.first_name"
                                                 class="w-full h-full object-cover" @error="handleImageError"
                                                 @load="handleImageLoad" v-if="imageLoaded[employee.id] !== false" />
@@ -131,7 +131,7 @@
                                             title="Edit">
                                             <i class="bx bx-edit text-lg"></i>
                                         </button>
-                                        <button @click="deleteEmployee(employee.id)"
+                                        <button @click="confirmDelete(employee)"
                                             class="p-1.5 rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors"
                                             title="Delete">
                                             <i class="bx bx-trash text-lg"></i>
@@ -200,6 +200,7 @@ const page = usePage();
 const search = ref(props.filters?.search || '');
 const loading = ref(false);
 const imageLoaded = reactive({});
+const deleting = ref(false);
 
 // Computed
 const currentRoute = computed(() => page.url);
@@ -341,17 +342,31 @@ const editEmployee = (id) => {
     router.visit(route('PIM.getPersonalDetails', id));
 };
 
-const deleteEmployee = (id) => {
-    if (confirm('Are you sure you want to delete this employee?')) {
-        router.delete(route('PIM.deleteEmployee', id), {
-            onSuccess: () => {
-                notyf.success('Employee deleted successfully!');
-            },
-            onError: () => {
-                notyf.error('Failed to delete employee.');
-            }
-        });
+// ✅ Updated delete function with confirmation and better error handling
+const confirmDelete = (employee) => {
+    if (deleting.value) return;
+
+    if (confirm(`Are you sure you want to delete ${employee.first_name} ${employee.last_name}? This action cannot be undone.`)) {
+        deleteEmployee(employee.id);
     }
+};
+
+const deleteEmployee = (id) => {
+    deleting.value = true;
+
+    router.delete(route('PIM.deleteEmployee', id), {
+        onSuccess: () => {
+            notyf.success('Employee deleted successfully!');
+            deleting.value = false;
+            // Refresh the list
+            router.reload({ only: ['employees'] });
+        },
+        onError: (errors) => {
+            notyf.error('Failed to delete employee. Please try again.');
+            deleting.value = false;
+            console.error('Delete error:', errors);
+        }
+    });
 };
 
 // Watch for filter changes

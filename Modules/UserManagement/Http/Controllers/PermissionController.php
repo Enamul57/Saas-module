@@ -11,23 +11,85 @@ use App\Models\TenantRole as Role;
 class PermissionController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display role permissions.
+     */
+    /**
+     * Display role permissions.
      */
     public function index($roleId)
     {
         $role = Role::findOrFail($roleId);
-        $roles = Role::whereHas('features', function ($query) use ($roleId) {
-            $query->where('role_id', $roleId);
-        })->with('features.permissions')->get();
 
-        $module_permission = Modules::whereHas('permissions')->with(['permissions'])->get();
+        // ✅ Get the role with features and permissions
+        $roles = Role::with(['features.permissions'])
+            ->where('id', $roleId)
+            ->get();
 
+        // ✅ Get the role's assigned permission IDs directly
+        $assignedPermissionIds = $role->permissions()->pluck('id')->toArray();
+        // ✅ Get all module permissions with assignment status
+        $module_permission = Modules::whereHas('permissions')
+            ->with(['permissions'])
+            ->get()
+            ->map(function ($module) use ($assignedPermissionIds) {
+                return [
+                    'id' => $module->id,
+                    'name' => $module->name,
+                    'slug' => $module->slug,
+                    'permissions' => $module->permissions->map(function ($permission) use ($assignedPermissionIds) {
+                        return [
+                            'id' => $permission->id,
+                            'name' => $permission->name,
+                            'slug' => $permission->slug,
+                            'assigned' => in_array($permission->id, $assignedPermissionIds),
+                        ];
+                    }),
+                ];
+            });
+
+        // ✅ Return the data
         return Inertia::render('UserManagement/User/PermissionRole', [
             'roles' => $roles,
             'module_permission' => $module_permission,
             'role_name' => $role->name,
             'role_id' => $role->id,
+            'assigned_permission_ids' => $assignedPermissionIds, // ✅ Pass assigned IDs separately
         ]);
+    }
+
+    /**
+     * Store role permissions.
+     */
+    public function store(Request $request, $roleId)
+    {
+        // ✅ DEBUG: Dump the incoming request
+        dd([
+            'step' => '1. Incoming Request',
+            'role_id' => $roleId,
+            'all_request_data' => $request->all(),
+            'modules_data' => $request->modules,
+        ]);
+        $validated = $request->validate([
+            'modules' => 'required|array',
+        ]);
+
+        $role = Role::findOrFail($roleId);
+
+        // Get all permission IDs from the modules
+        $permissionIds = collect($validated['modules'])
+            ->flatMap(function ($moduleData) {
+                return $moduleData['permissions'] ?? [];
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // Sync permissions to the role
+        $role->permissions()->sync($permissionIds);
+
+        return to_route('admin.permissions.role.index', $roleId)
+            ->with('success', 'Permissions assigned successfully.');
     }
 
     /**
@@ -37,11 +99,6 @@ class PermissionController extends Controller
     {
         return view('usermanagement::create');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
 
     /**
      * Show the specified resource.
@@ -62,10 +119,16 @@ class PermissionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id) {}
+    public function update(Request $request, $id)
+    {
+        // Update logic here
+    }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id) {}
+    public function destroy($id)
+    {
+        // Delete logic here
+    }
 }

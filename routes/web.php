@@ -85,5 +85,5 @@ Route::get('/debug-auth', function () {
 });
 // Load module routes separately
 require __DIR__ . '/modules/pim.php';
-// require __DIR__ . '/modules/user-management.php';
+require __DIR__ . '/modules/user-management.php';
 // require __DIR__ . '/modules/attendance.php';

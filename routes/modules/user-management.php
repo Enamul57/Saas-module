@@ -22,6 +22,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->middleware('permission:create_users')
             ->name('store');
 
+        // ✅ SEARCH ROUTE MUST COME BEFORE THE {user} ROUTE
+        Route::get('/search', [UserController::class, 'search'])
+            ->middleware('permission:view_users')
+            ->name('search');
+
         Route::get('/{user}', [UserController::class, 'show'])
             ->middleware('permission:view_users')
             ->name('show');
@@ -108,9 +113,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->middleware('permission:delete_permissions')
             ->name('module.delete');
 
-        // Role permissions view
+        // Role permissions view - uses PermissionController
         Route::get('/role/{id}', [PermissionController::class, 'index'])
             ->middleware('permission:view_permissions')
             ->name('role.index');
+
+        // Store role permissions
+        Route::post('/role/{role}', [PermissionController::class, 'store'])
+            ->middleware('permission:assign_permissions')
+            ->name('role.store');
     });
 });

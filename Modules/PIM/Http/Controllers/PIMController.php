@@ -54,8 +54,25 @@ class PIMController extends Controller
 
     public function store(EmployeeStore $request)
     {
-        $employee = $this->employeeCreate->createEmployee($request->validated());
-        return to_route('pim.getPersonalDetails', $employee->id);
+        $validated = $request->validated();
+
+        // ✅ Handle login credentials
+        if ($request->has('showCredentials') && $request->showCredentials === true) {
+            $validated['showCredentials'] = true;
+            $validated['password'] = $request->password;
+        } else {
+            $validated['showCredentials'] = false;
+        }
+
+        // ✅ Handle linking existing user
+        if ($request->has('link_user_id') && !empty($request->link_user_id)) {
+            $validated['link_user_id'] = $request->link_user_id;
+        }
+
+        $employee = $this->employeeCreate->createEmployee($validated);
+
+        return to_route('pim.getPersonalDetails', $employee->id)
+            ->with('success', 'Employee created successfully!');
     }
 
     public function show($id)
@@ -75,9 +92,36 @@ class PIMController extends Controller
 
     public function destroy($id)
     {
-        // Delete logic
-    }
+        try {
+            $employee = Employee::findOrFail($id);
 
+            // Optional: Check if user has permission to delete
+            // $this->authorize('delete', $employee);
+
+            // Delete associated records first (if any)
+            if ($employee->personal_details) {
+                $employee->personal_details->delete();
+            }
+
+            if ($employee->contact_details) {
+                $employee->contact_details->delete();
+            }
+
+            if ($employee->jobDetails) {
+                $employee->jobDetails->delete();
+            }
+
+            // Delete the employee
+            $employee->delete();
+
+            return redirect()->route('pim.index')
+                ->with('success', 'Employee deleted successfully!');
+        } catch (\Exception $e) {
+            \Log::error('Error deleting employee: ' . $e->getMessage());
+            return redirect()->route('pim.index')
+                ->with('error', 'Failed to delete employee: ' . $e->getMessage());
+        }
+    }
     public function personal_details(Employee $employee)
     {
         $employee = $employee->load('personal_details.attachments');

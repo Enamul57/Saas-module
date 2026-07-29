@@ -30,15 +30,7 @@ class HandleInertiaRequests extends Middleware
                     'role' => $user->role,
                     'roles' => $user->getRoleNames()->toArray(),
                     'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
-                    // ✅ Add employee data
                     'employee_id' => $employee ? $employee->id : null,
-                    'employee' => $employee ? [
-                        'id' => $employee->id,
-                        'employee_id' => $employee->employee_id,
-                        'first_name' => $employee->first_name,
-                        'last_name' => $employee->last_name,
-                        'email' => $employee->email,
-                    ] : null,
                 ] : null,
             ],
             'ziggy' => function () use ($request) {

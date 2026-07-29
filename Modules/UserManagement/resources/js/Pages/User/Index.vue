@@ -78,7 +78,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr v-for="user in users.data" :key="user.id" class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-800">{{ user.name
-                                }}</td>
+                                    }}</td>
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">{{ user.email }}</td>
                                 <td class="px-6 py-3 whitespace-nowrap text-sm">
                                     <div class="flex flex-wrap gap-1">

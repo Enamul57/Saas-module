@@ -19,7 +19,9 @@ Route::middleware(['auth', 'verified'])->prefix('pims')->name('pim.')->group(fun
     Route::get('/create', [PIMController::class, 'create'])
         ->middleware('permission:create_employee')
         ->name('create');
-
+    Route::delete('/employee/{employee}', [PIMController::class, 'destroy'])
+        ->middleware('permission:delete_employee')
+        ->name('deleteEmployee');
     // Store employee
     Route::post('/add-employee', [PIMController::class, 'store'])
         ->middleware('permission:create_employee')
