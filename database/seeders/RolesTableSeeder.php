@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Company;
-use App\Models\Tenant;
 use Illuminate\Database\Seeder;
 use App\Models\TenantRole as Role;
 use App\Models\TenantPermission as Permission;
@@ -27,13 +26,15 @@ class RolesTableSeeder extends Seeder
         Role::where('name', 'Super Admin')->update(['name' => 'super_admin']);
         Role::where('name', 'SuperAdmin')->update(['name' => 'super_admin']);
 
+        // ✅ FIX: Ensure all permissions have correct slugs before assigning
+        $this->fixPermissionSlugs($company->id);
+
         // Define role permission mappings
         $rolePermissions = [
             'super_admin' => [
-                'all' => true, // This role gets all permissions
+                'all' => true,
             ],
             'admin' => [
-                // Full access except system-level changes
                 'view_dashboard',
                 'view_analytics',
                 'view_users',
@@ -111,7 +112,6 @@ class RolesTableSeeder extends Seeder
                 'view_api_logs',
             ],
             'hr_manager' => [
-                // Full HR access
                 'view_dashboard',
                 'view_analytics',
                 'view_users',
@@ -169,8 +169,8 @@ class RolesTableSeeder extends Seeder
                 'export_reports',
             ],
             'department_manager' => [
-                // Limited to their department
                 'view_dashboard',
+                'view_users', // ✅ Make sure this is included
                 'view_employees',
                 'view_employee_details',
                 'view_jobs',
@@ -202,7 +202,6 @@ class RolesTableSeeder extends Seeder
                 'assign_assets',
             ],
             'manager' => [
-                // Middle management
                 'view_dashboard',
                 'view_employees',
                 'view_employee_details',
@@ -230,8 +229,7 @@ class RolesTableSeeder extends Seeder
                 'generate_reports',
             ],
             'employee' => [
-                // Self-service only
-                'view_employee_details', // Only their own
+                'view_employee_details',
                 'view_jobs',
                 'view_job_details',
                 'create_attendance',
@@ -240,14 +238,13 @@ class RolesTableSeeder extends Seeder
                 'view_leaves',
                 'view_employee_salary',
                 'view_tasks',
-                'edit_tasks', // Only their own tasks
-                'view_trainings', // Assigned trainings only
-                'view_performance', // Their own reviews
+                'edit_tasks',
+                'view_trainings',
+                'view_performance',
                 'create_tickets',
-                'view_tickets', // Support tickets
+                'view_tickets',
             ],
             'finance_manager' => [
-                // Finance specific
                 'view_dashboard',
                 'view_analytics',
                 'view_employees',
@@ -269,7 +266,6 @@ class RolesTableSeeder extends Seeder
 
         // Create roles and assign permissions
         foreach ($rolePermissions as $roleName => $permissions) {
-            // ✅ Use updateOrCreate to handle existing roles
             $role = Role::updateOrCreate(
                 [
                     'name' => $roleName,
@@ -280,23 +276,60 @@ class RolesTableSeeder extends Seeder
             );
 
             if ($roleName === 'super_admin') {
-                // Super admin gets ALL permissions
-                $allPermissions = Permission::where('tenant_id', $company->id)->get();
+                $allPermissions = Permission::where('tenant_id', $company->id)
+                    ->where('guard_name', 'web')
+                    ->get();
                 $role->syncPermissions($allPermissions);
                 $this->command->info("Super Admin role created with " . $allPermissions->count() . " permissions");
             } else {
-                // Assign specific permissions
-                $permissionNames = $permissions;
-                $permissionIds = Permission::whereIn('name', $permissionNames)
-                    ->where('tenant_id', $company->id)
-                    ->pluck('id')
-                    ->toArray();
+                // ✅ FIX: Get ONLY ONE permission per name (the one with correct slug)
+                $permissionIds = [];
+                foreach ($permissions as $permName) {
+                    $permission = Permission::where('name', $permName)
+                        ->where('tenant_id', $company->id)
+                        ->where('guard_name', 'web')
+                        ->orderBy('id') // Get the first one (oldest)
+                        ->first();
 
+                    if ($permission) {
+                        $permissionIds[] = $permission->id;
+                    } else {
+                        // If permission doesn't exist, create it
+                        $permission = Permission::create([
+                            'name' => $permName,
+                            'slug' => $permName,
+                            'guard_name' => 'web',
+                            'tenant_id' => $company->id,
+                        ]);
+                        $permissionIds[] = $permission->id;
+                        $this->command->warn("⚠️ Created missing permission: {$permName}");
+                    }
+                }
+
+                // ✅ FIX: Use sync without detaching to preserve existing permissions
+                // This ensures we don't remove permissions that should stay
                 $role->permissions()->sync($permissionIds);
-                $this->command->info("Role '{$roleName}' created with " . count($permissionIds) . " permissions");
+                $this->command->info("Role '{$roleName}' synced with " . count($permissionIds) . " permissions");
             }
         }
 
         $this->command->info('All roles and permissions created successfully!');
+    }
+
+    /**
+     * ✅ FIX: Ensure all permissions have correct slugs
+     */
+    private function fixPermissionSlugs($tenantId): void
+    {
+        $permissions = Permission::where('tenant_id', $tenantId)->get();
+
+        foreach ($permissions as $permission) {
+            // If slug doesn't match name, update it
+            if ($permission->slug !== $permission->name) {
+                $permission->slug = $permission->name;
+                $permission->save();
+                $this->command->line("🔄 Fixed slug for: {$permission->name} (was: {$permission->slug})");
+            }
+        }
     }
 }

@@ -18,20 +18,17 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $employee = $user ? $user->employee : null;
+
+        // Debug: Log the user data
+        if ($user) {
+            \Log::info('User Features:', ['features' => $user->getAllFeatures()]);
+            \Log::info('User Permissions:', ['permissions' => $user->getAllPermissionsFromRoles()]);
+            \Log::info('User Roles:', ['roles' => $user->getRoleNames()->toArray()]);
+        }
 
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $user ? [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'tenant_id' => $user->tenant_id,
-                    'role' => $user->role,
-                    'roles' => $user->getRoleNames()->toArray(),
-                    'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
-                    'employee_id' => $employee ? $employee->id : null,
-                ] : null,
+                'user' => $user ? $user->getAuthData() : null,
             ],
             'ziggy' => function () use ($request) {
                 return array_merge((new Ziggy)->toArray(), [

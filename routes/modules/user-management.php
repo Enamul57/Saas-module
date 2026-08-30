@@ -22,7 +22,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->middleware('permission:create_users')
             ->name('store');
 
-        // ✅ SEARCH ROUTE MUST COME BEFORE THE {user} ROUTE
         Route::get('/search', [UserController::class, 'search'])
             ->middleware('permission:view_users')
             ->name('search');
@@ -43,7 +42,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->middleware('permission:delete_users')
             ->name('destroy');
 
-        // Assign role to user
         Route::post('/{user}/assign-role', [ModulesController::class, 'assignRoleToUser'])
             ->middleware('permission:assign_roles')
             ->name('assign-role');
@@ -75,12 +73,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->middleware('permission:delete_roles')
             ->name('destroy');
 
-        // Assign modules to role
         Route::post('/{role}/modules', [ModulesController::class, 'assignModulesToRole'])
             ->middleware('permission:assign_permissions_to_roles')
             ->name('modules.assign');
 
-        // Assign permissions to role
         Route::post('/{role}/permissions', [ModulesController::class, 'assignRolePermission'])
             ->middleware('permission:assign_permissions_to_roles')
             ->name('permissions.store');
@@ -88,37 +84,30 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     // ==================== PERMISSION MANAGEMENT ====================
     Route::prefix('permissions')->name('permissions.')->group(function () {
-        // Module permissions view
         Route::get('/modules', [ModulesController::class, 'permissonModuleView'])
             ->middleware('permission:view_permissions')
             ->name('assign');
 
-        // Fetch module permissions JSON
         Route::get('/modules/fetchJson', [ModulesController::class, 'fetchModulePermissionJson'])
             ->middleware('permission:view_permissions')
             ->name('module.fetch');
 
-        // Assign permission to module
         Route::post('/modules', [ModulesController::class, 'assignPermissionToModule'])
             ->middleware('permission:assign_permissions')
             ->name('module.store');
 
-        // Update permission to module
         Route::put('/modules/{id}', [ModulesController::class, 'updatePermissionToModule'])
             ->middleware('permission:edit_permissions')
             ->name('module.update');
 
-        // Delete module permission
         Route::delete('/module/{id}', [ModulesController::class, 'destroy'])
             ->middleware('permission:delete_permissions')
             ->name('module.delete');
 
-        // Role permissions view - uses PermissionController
         Route::get('/role/{id}', [PermissionController::class, 'index'])
             ->middleware('permission:view_permissions')
             ->name('role.index');
 
-        // Store role permissions
         Route::post('/role/{role}', [PermissionController::class, 'store'])
             ->middleware('permission:assign_permissions')
             ->name('role.store');

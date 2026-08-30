@@ -7,15 +7,23 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
+use App\traits\HasPermissionDirect;
 
 class UserController extends Controller
 {
+    use HasPermissionDirect;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        // ✅ Load roles relationship
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('view_users')) {
+            abort(403, 'You do not have permission to view users.');
+        }
+
         $users = User::with('roles')
             ->when($request->search, function ($query, $search) {
                 return $query->where('name', 'LIKE', "%{$search}%")
@@ -23,7 +31,6 @@ class UserController extends Controller
             })
             ->paginate(10);
 
-        // ✅ Transform users to include roles
         $users->getCollection()->transform(function ($user) {
             return [
                 'id' => $user->id,
@@ -47,6 +54,11 @@ class UserController extends Controller
      */
     public function search(Request $request)
     {
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('view_users')) {
+            abort(403, 'You do not have permission to view users.');
+        }
+
         try {
             $query = $request->get('q');
 
@@ -54,7 +66,6 @@ class UserController extends Controller
                 return response()->json([]);
             }
 
-            // ✅ Get users that don't have an employee record
             $users = User::where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
                     ->orWhere('email', 'LIKE', "%{$query}%");
@@ -80,6 +91,11 @@ class UserController extends Controller
      */
     public function create()
     {
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('create_users')) {
+            abort(403, 'You do not have permission to create users.');
+        }
+
         return Inertia::render('UserManagement/User/Create');
     }
 
@@ -88,14 +104,21 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('create_users')) {
+            abort(403, 'You do not have permission to create users.');
+        }
+
         $data = $request->validate([
             'name' => 'required|string',
             'email' => ['required', 'email', Rule::unique('users')->where(fn($q) => $q->where('tenant_id', session('tenant_id')))],
             'password' => 'required|string|min:6',
         ]);
+
         $data['tenant_id'] = session('tenant_id');
-        // Create user in DB
+
         User::create($data);
+
         return to_route('admin.users.index')->with('success', 'User Created Successfully');
     }
 
@@ -104,7 +127,11 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        // ✅ Return Inertia instead of view
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('view_users')) {
+            abort(403, 'You do not have permission to view users.');
+        }
+
         $user = User::with('roles')->findOrFail($id);
         return Inertia::render('UserManagement/User/Show', [
             'user' => $user
@@ -116,7 +143,11 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        // ✅ Return Inertia instead of view
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('edit_users')) {
+            abort(403, 'You do not have permission to edit users.');
+        }
+
         $user = User::with('roles')->findOrFail($id);
         return Inertia::render('UserManagement/User/Edit', [
             'user' => $user
@@ -128,15 +159,24 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('edit_users')) {
+            abort(403, 'You do not have permission to edit users.');
+        }
+
         $user = User::findOrFail($id);
+
         $validated = $request->validate([
             'name' => 'required|string',
             'email' => ['required', 'email', Rule::unique('users')->ignore($id)->where(fn($q) => $q->where('tenant_id', session('tenant_id')))],
         ]);
+
         if ($request->filled('password')) {
             $validated['password'] = $request->password;
         }
+
         $user->update($validated);
+
         return to_route('admin.users.index')->with('info', 'User Updated Successfully');
     }
 
@@ -145,7 +185,24 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        User::find($id)->delete();
+        // ✅ Use direct permission check
+        if (!$this->hasPermissionDirect('delete_users')) {
+            abort(403, 'You do not have permission to delete users.');
+        }
+
+        // ✅ Prevent users from deleting themselves
+        if ($id == auth()->id()) {
+            return to_route('admin.users.index')->with('error', 'You cannot delete your own account.');
+        }
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return to_route('admin.users.index')->with('error', 'User not found.');
+        }
+
+        $user->delete();
+
         return to_route('admin.users.index')->with('danger', 'User Deleted Successfully');
     }
 }

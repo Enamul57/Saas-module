@@ -3,6 +3,7 @@
 namespace Modules\PIM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\traits\HasPermissionDirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -16,9 +17,12 @@ use Modules\PIM\App\Http\Requests\ContactRequest;
 use Modules\PIM\App\Models\JobCategory;
 use Modules\PIM\App\Models\JobTitle;
 use Modules\PIM\App\Models\JobUnit;
+use Modules\PIM\App\Models\JobDetails;
 
 class PIMController extends Controller
 {
+    use HasPermissionDirect;
+
     protected $employeeCreate;
 
     public function __construct(EmployeeCreate $employeeCreate)
@@ -26,9 +30,16 @@ class PIMController extends Controller
         $this->employeeCreate = $employeeCreate;
     }
 
+    /**
+     * Display a listing of employees.
+     */
     public function index(Request $request)
     {
-        // Fetch employees with their related data
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_employees')) {
+            abort(403, 'You do not have permission to view employees.');
+        }
+
         $employees = Employee::with(['personal_details', 'contact_details', 'jobDetails'])
             ->when($request->search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
@@ -47,16 +58,32 @@ class PIMController extends Controller
         ]);
     }
 
+    /**
+     * Show the form for creating a new employee.
+     */
     public function create()
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('create_employee')) {
+            abort(403, 'You do not have permission to create employees.');
+        }
+
         return Inertia::render('PIM/PIM/Create');
     }
 
+    /**
+     * Store a newly created employee in storage.
+     */
     public function store(EmployeeStore $request)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('create_employee')) {
+            abort(403, 'You do not have permission to create employees.');
+        }
+
         $validated = $request->validated();
 
-        // ✅ Handle login credentials
+        // Handle login credentials
         if ($request->has('showCredentials') && $request->showCredentials === true) {
             $validated['showCredentials'] = true;
             $validated['password'] = $request->password;
@@ -64,7 +91,7 @@ class PIMController extends Controller
             $validated['showCredentials'] = false;
         }
 
-        // ✅ Handle linking existing user
+        // Handle linking existing user
         if ($request->has('link_user_id') && !empty($request->link_user_id)) {
             $validated['link_user_id'] = $request->link_user_id;
         }
@@ -75,30 +102,75 @@ class PIMController extends Controller
             ->with('success', 'Employee created successfully!');
     }
 
+    /**
+     * Display the specified employee.
+     */
     public function show($id)
     {
-        return Inertia::render('PIM/PIM/Show', ['employee' => Employee::with(['personal_details', 'contact_details', 'jobDetails'])->findOrFail($id)]);
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_employee_details')) {
+            abort(403, 'You do not have permission to view employee details.');
+        }
+
+        return Inertia::render('PIM/PIM/Show', [
+            'employee' => Employee::with(['personal_details', 'contact_details', 'jobDetails'])->findOrFail($id)
+        ]);
     }
 
+    /**
+     * Show the form for editing the specified employee.
+     */
     public function edit($id)
     {
-        return Inertia::render('PIM/PIM/Edit', ['employee' => Employee::findOrFail($id)]);
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('edit_employee')) {
+            abort(403, 'You do not have permission to edit employees.');
+        }
+
+        return Inertia::render('PIM/PIM/Edit', [
+            'employee' => Employee::findOrFail($id)
+        ]);
     }
 
+    /**
+     * Update the specified employee in storage.
+     */
     public function update(Request $request, $id)
     {
-        // Update logic
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('edit_employee')) {
+            abort(403, 'You do not have permission to edit employees.');
+        }
+
+        $employee = Employee::findOrFail($id);
+
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('employees')->ignore($id)],
+            'employee_id' => ['nullable', 'string', Rule::unique('employees')->ignore($id)],
+            'img' => 'nullable|image|max:2048',
+        ]);
+
+        $employee->update($validated);
+
+        return to_route('pim.index')->with('success', 'Employee updated successfully!');
     }
 
+    /**
+     * Remove the specified employee from storage.
+     */
     public function destroy($id)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('delete_employee')) {
+            abort(403, 'You do not have permission to delete employees.');
+        }
+
         try {
             $employee = Employee::findOrFail($id);
 
-            // Optional: Check if user has permission to delete
-            // $this->authorize('delete', $employee);
-
-            // Delete associated records first (if any)
+            // Delete associated records first
             if ($employee->personal_details) {
                 $employee->personal_details->delete();
             }
@@ -117,39 +189,99 @@ class PIMController extends Controller
             return redirect()->route('pim.index')
                 ->with('success', 'Employee deleted successfully!');
         } catch (\Exception $e) {
-            \Log::error('Error deleting employee: ' . $e->getMessage());
+            Log::error('Error deleting employee: ' . $e->getMessage());
             return redirect()->route('pim.index')
                 ->with('error', 'Failed to delete employee: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Display personal details form for an employee.
+     */
     public function personal_details(Employee $employee)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_employee_details')) {
+            abort(403, 'You do not have permission to view employee details.');
+        }
+
         $employee = $employee->load('personal_details.attachments');
         return Inertia::render('PIM/PIM/Personal_details', [
             'employee' => $employee
         ]);
     }
 
-    public function storePersonalDetails(Request $request, Employee $employee)
+    /**
+     * Store personal details for an employee.
+     */
+    public function storePersonalDetails(PersonalDetailsRequest $request, Employee $employee)
     {
-        // ... your existing code ...
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('edit_employee')) {
+            abort(403, 'You do not have permission to edit employee details.');
+        }
+
+        $validated = $request->validated();
+
+        // Handle file uploads
+        if ($request->hasFile('attachments')) {
+            $paths = [];
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('employee_documents/' . $employee->id, 'public');
+                $paths[] = $path;
+            }
+            $validated['attachments'] = $paths;
+        }
+
+        $personalDetails = $employee->personal_details()->updateOrCreate([], $validated);
+
+        return to_route('pim.getPersonalDetails', $employee)
+            ->with('success', 'Personal details saved successfully!');
     }
 
+    /**
+     * Display contact details form for an employee.
+     */
     public function contact_details(Employee $employee)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_employee_details')) {
+            abort(403, 'You do not have permission to view employee details.');
+        }
+
         $employee = $employee->load('personal_details', 'contact_details');
         return Inertia::render('PIM/PIM/ContactDetails', [
             'employee' => $employee
         ]);
     }
 
+    /**
+     * Store contact details for an employee.
+     */
     public function storeContactDetails(ContactRequest $request, Employee $employee)
     {
-        // ... your existing code ...
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('edit_employee')) {
+            abort(403, 'You do not have permission to edit employee details.');
+        }
+
+        $validated = $request->validated();
+        $contactDetails = $employee->contact_details()->updateOrCreate([], $validated);
+
+        return to_route('pim.ContactDetails', $employee)
+            ->with('success', 'Contact details saved successfully!');
     }
 
+    /**
+     * Display job details form for an employee.
+     */
     public function job_details(Employee $employee)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_job_details')) {
+            abort(403, 'You do not have permission to view job details.');
+        }
+
         $employee->load(['jobDetails', 'jobDetails.jobCategory', 'jobDetails.jobTitle', 'jobDetails.jobUnit']);
 
         $jobCategories = JobCategory::all();
@@ -169,8 +301,16 @@ class PIMController extends Controller
         ]);
     }
 
+    /**
+     * Store job details for an employee.
+     */
     public function storeJobDetails(Request $request, Employee $employee)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('edit_job')) {
+            abort(403, 'You do not have permission to edit job details.');
+        }
+
         $validated = $request->validate([
             'job_title' => ['nullable', 'string', 'max:255'],
             'job_category' => ['nullable', 'string', 'max:255'],
@@ -202,15 +342,61 @@ class PIMController extends Controller
         return to_route('pim.JobDetails', $employee)->with('success', 'Job details saved successfully!');
     }
 
+    /**
+     * Display salary details for an employee.
+     */
     public function salary_details(Employee $employee)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_employee_salary')) {
+            abort(403, 'You do not have permission to view employee salary.');
+        }
+
         return Inertia::render('PIM/PIM/SalaryDetails', [
             'employee' => $employee
         ]);
     }
 
+    /**
+     * Store salary details for an employee.
+     */
+    public function storeSalaryDetails(Request $request, Employee $employee)
+    {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('edit_employee')) {
+            abort(403, 'You do not have permission to edit employee salary.');
+        }
+
+        $validated = $request->validate([
+            'salary' => ['nullable', 'numeric', 'min:0'],
+            'salary_type' => ['nullable', 'string', 'max:255'],
+            'pay_frequency' => ['nullable', 'string', 'max:255'],
+            'currency' => ['nullable', 'string', 'max:3'],
+            'bank_name' => ['nullable', 'string', 'max:255'],
+            'bank_account' => ['nullable', 'string', 'max:255'],
+            'bank_routing' => ['nullable', 'string', 'max:255'],
+            'tax_id' => ['nullable', 'string', 'max:255'],
+            'tax_filing_status' => ['nullable', 'string', 'max:255'],
+            'allowances' => ['nullable', 'array'],
+            'deductions' => ['nullable', 'array'],
+        ]);
+
+        $salaryDetails = $employee->salaryDetails()->updateOrCreate([], $validated);
+
+        return to_route('pim.SalaryDetails', $employee)
+            ->with('success', 'Salary details saved successfully!');
+    }
+
+    /**
+     * Display employee list (alternative view).
+     */
     public function employeeList(Request $request)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_employees')) {
+            abort(403, 'You do not have permission to view employees.');
+        }
+
         $employees = Employee::with([
             'personal_details',
             'contact_details',
@@ -235,12 +421,19 @@ class PIMController extends Controller
         ]);
     }
 
+    /**
+     * Display HR reports.
+     */
     public function reports(Request $request)
     {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('view_reports')) {
+            abort(403, 'You do not have permission to view reports.');
+        }
+
         // Basic statistics
         $stats = [
             'total_employees' => Employee::count(),
-            // ✅ Fix: Use 'employee_status' instead of 'employment_status'
             'active_employees' => Employee::whereHas('jobDetails', function ($query) {
                 $query->where('employee_status', 'active');
             })->count(),
@@ -258,5 +451,70 @@ class PIMController extends Controller
         return Inertia::render('PIM/PIM/Reports', [
             'stats' => $stats
         ]);
+    }
+
+    /**
+     * Export employees data.
+     */
+    public function export(Request $request)
+    {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('export_employees')) {
+            abort(403, 'You do not have permission to export employees.');
+        }
+
+        // Export logic here
+        // ...
+    }
+
+    /**
+     * Import employees data.
+     */
+    public function import(Request $request)
+    {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('import_employees')) {
+            abort(403, 'You do not have permission to import employees.');
+        }
+
+        // Import logic here
+        // ...
+    }
+
+    /**
+     * Manage employee documents.
+     */
+    public function documents(Employee $employee)
+    {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('manage_employee_documents')) {
+            abort(403, 'You do not have permission to manage employee documents.');
+        }
+
+        return Inertia::render('PIM/PIM/Documents', [
+            'employee' => $employee->load('documents')
+        ]);
+    }
+
+    /**
+     * Upload employee document.
+     */
+    public function uploadDocument(Request $request, Employee $employee)
+    {
+        // ✅ Check permission
+        if (!$this->hasPermissionDirect('manage_employee_documents')) {
+            abort(403, 'You do not have permission to manage employee documents.');
+        }
+
+        $validated = $request->validate([
+            'document' => 'required|file|max:10240',
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
+        ]);
+
+        // Upload logic here
+        // ...
+
+        return redirect()->back()->with('success', 'Document uploaded successfully!');
     }
 }

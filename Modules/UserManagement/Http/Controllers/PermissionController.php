@@ -57,18 +57,14 @@ class PermissionController extends Controller
         ]);
     }
 
-    /**
-     * Store role permissions.
-     */
     public function store(Request $request, $roleId)
     {
-        // ✅ DEBUG: Dump the incoming request
-        dd([
-            'step' => '1. Incoming Request',
+        // ✅ Log the incoming request for debugging
+        \Log::info('Assigning permissions to role', [
             'role_id' => $roleId,
-            'all_request_data' => $request->all(),
-            'modules_data' => $request->modules,
+            'modules' => $request->modules,
         ]);
+
         $validated = $request->validate([
             'modules' => 'required|array',
         ]);
@@ -85,8 +81,17 @@ class PermissionController extends Controller
             ->values()
             ->toArray();
 
+        // Log what's being assigned
+        \Log::info('Assigning permission IDs', [
+            'role_id' => $roleId,
+            'permission_ids' => $permissionIds,
+        ]);
+
         // Sync permissions to the role
         $role->permissions()->sync($permissionIds);
+
+        // Clear permission cache
+        app('cache')->forget('spatie.permission.cache');
 
         return to_route('admin.permissions.role.index', $roleId)
             ->with('success', 'Permissions assigned successfully.');

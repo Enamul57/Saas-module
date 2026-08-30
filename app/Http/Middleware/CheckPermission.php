@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -21,10 +22,32 @@ class CheckPermission
 
         $user = Auth::user();
 
-        // Check if user has the permission or is super_admin
+        // Check if user is super_admin
         $roles = $user->getRoleNames()->map(fn($role) => strtolower($role))->toArray();
+        if (in_array('super_admin', $roles)) {
+            return $next($request);
+        }
 
-        if ($user->can($permission) || in_array('super_admin', $roles)) {
+        // ✅ DIRECT DATABASE QUERY - Works!
+        $hasPermission = DB::table('role_has_permissions')
+            ->join('model_has_roles', 'model_has_roles.role_id', '=', 'role_has_permissions.role_id')
+            ->join('permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
+            ->where('model_has_roles.model_id', $user->id)
+            ->where('model_has_roles.model_type', 'App\\Models\\User')
+            ->where('permissions.name', $permission)
+            ->exists();
+
+        // If not found, try direct user permissions
+        if (!$hasPermission) {
+            $hasPermission = DB::table('model_has_permissions')
+                ->join('permissions', 'permissions.id', '=', 'model_has_permissions.permission_id')
+                ->where('model_has_permissions.model_id', $user->id)
+                ->where('model_has_permissions.model_type', 'App\\Models\\User')
+                ->where('permissions.name', $permission)
+                ->exists();
+        }
+
+        if ($hasPermission) {
             return $next($request);
         }
 
@@ -36,7 +59,6 @@ class CheckPermission
             ], 403);
         }
 
-        // Check if Inertia is being used
         if (class_exists(Inertia::class)) {
             return Inertia::render('Errors/Forbidden', [
                 'permission' => $permission,
@@ -44,7 +66,6 @@ class CheckPermission
             ])->toResponse($request);
         }
 
-        // Fallback to Blade error page
         abort(403, "You do not have permission to perform this action: {$permission}");
     }
 }
